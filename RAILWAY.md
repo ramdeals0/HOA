@@ -71,15 +71,32 @@ In Stripe Dashboard → Webhooks → Add endpoint:
 - URL: `https://<api-service>.up.railway.app/api/payments/webhook`
 - Events: `checkout.session.completed`
 
-## Option B: Railway CLI
+## Option B: One-command CLI deploy
 
 ```bash
-npm install -g @railway/cli
+# 1. Authenticate (pick one)
 railway login
-./scripts/railway-setup.sh
+# OR
+export RAILWAY_TOKEN=your-token-from-railway.com/account/tokens
+
+# 2. Deploy everything
+pnpm railway:deploy
 ```
 
-Then configure each service Dockerfile path and env vars in the dashboard.
+This script (`scripts/railway-deploy.sh`) will:
+- Create/link the `hoa-saas` Railway project
+- Apply `.railway/railway.ts` (Postgres + hoa-api + hoa-web)
+- Generate public domains and wire CORS/API URLs
+- Deploy both services from local source
+
+Preview infrastructure changes without applying:
+
+```bash
+pnpm railway:plan
+pnpm railway:apply
+```
+
+## Option C: Railway CLI (manual steps)
 
 ## Build without Docker (Nixpacks)
 
