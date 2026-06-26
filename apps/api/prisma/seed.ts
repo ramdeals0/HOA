@@ -22,7 +22,7 @@ async function createTenantWithData(params: {
       settings: {
         create: {
           monthlyDuesCents: params.monthlyDuesCents,
-          annualDuesCents: params.monthlyDuesCents * 12,
+          annualDuesCents: params.monthlyDuesCents,
         },
       },
     },
@@ -93,7 +93,7 @@ async function main() {
     slug: 'whisper-groves',
     plan: 'PRO',
     primaryColor: '#2563eb',
-    monthlyDuesCents: 15000,
+    monthlyDuesCents: 5000,
   });
 
   const superAdmin = await createUser('superadmin@whispergroves.example.com', password, 'Sam', 'Admin');
@@ -188,59 +188,36 @@ async function main() {
     },
   });
 
-  // Invoices and payments
+  // Annual $50 dues on January 1 for the last 3 years (all active members)
   const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const dueDate = new Date(now.getFullYear(), now.getMonth(), 15);
+  const annualDuesCents = 5000;
+  const currentYear = now.getFullYear();
+  const annualYears = [currentYear - 2, currentYear - 1, currentYear];
+  const allDuesUserIds = [
+    ...members.map(({ member }) => member.id),
+    board1.id,
+    board2.id,
+    dualBoardMember.id,
+  ];
 
-  for (let i = 0; i < members.length; i++) {
-    const status = i < 3 ? 'PAID' : i < 6 ? 'OPEN' : 'OVERDUE';
-    const invoice = await prisma.invoice.create({
-      data: {
-        tenantId: whisperGroves.id,
-        userId: members[i].member.id,
-        amountCents: 15000,
-        description: `HOA Dues ${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}`,
-        periodStart,
-        periodEnd,
-        dueDate,
-        status,
-      },
-    });
+  for (const year of annualYears) {
+    const periodStart = new Date(year, 0, 1);
+    const periodEnd = new Date(year, 11, 31, 23, 59, 59);
+    const dueDate = new Date(year, 0, 1);
+    const paidAt = new Date(year, 0, 1, 12, 0, 0);
 
-    if (status === 'PAID') {
-      await prisma.payment.create({
-        data: {
-          tenantId: whisperGroves.id,
-          invoiceId: invoice.id,
-          userId: members[i].member.id,
-          amountCents: 15000,
-          status: 'SUCCEEDED',
-        },
-      });
-    }
-  }
-
-  // Historical paid invoices and payments (past 11 months for first 5 members)
-  for (let monthOffset = 1; monthOffset <= 11; monthOffset++) {
-    const histPeriodStart = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-    const histPeriodEnd = new Date(now.getFullYear(), now.getMonth() - monthOffset + 1, 0);
-    const histDueDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 15);
-    const paidAt = new Date(now.getFullYear(), now.getMonth() - monthOffset, 18);
-
-    for (let i = 0; i < 5; i++) {
+    for (const userId of allDuesUserIds) {
       const invoice = await prisma.invoice.create({
         data: {
           tenantId: whisperGroves.id,
-          userId: members[i].member.id,
-          amountCents: 15000,
-          description: `HOA Dues ${histPeriodStart.toLocaleDateString()} - ${histPeriodEnd.toLocaleDateString()}`,
-          periodStart: histPeriodStart,
-          periodEnd: histPeriodEnd,
-          dueDate: histDueDate,
+          userId,
+          amountCents: annualDuesCents,
+          description: `Annual HOA Dues ${year}`,
+          periodStart,
+          periodEnd,
+          dueDate,
           status: 'PAID',
-          createdAt: histPeriodStart,
+          createdAt: periodStart,
         },
       });
 
@@ -248,8 +225,8 @@ async function main() {
         data: {
           tenantId: whisperGroves.id,
           invoiceId: invoice.id,
-          userId: members[i].member.id,
-          amountCents: 15000,
+          userId,
+          amountCents: annualDuesCents,
           status: 'SUCCEEDED',
           createdAt: paidAt,
         },

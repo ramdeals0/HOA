@@ -49,6 +49,7 @@ router.post(
       periodEnd: new Date(data.periodEnd),
       dueDate: new Date(data.dueDate),
       description: data.description,
+      amountCents: data.amountCents,
     });
     res.status(201).json({ invoices, count: invoices.length });
   }),

@@ -8,11 +8,12 @@ export interface GenerateInvoicesParams {
   periodEnd: Date;
   dueDate: Date;
   description?: string;
+  amountCents?: number;
 }
 
 export class InvoiceService {
   async generateForAllMembers(params: GenerateInvoicesParams) {
-    const { tenantId, periodStart, periodEnd, dueDate, description } = params;
+    const { tenantId, periodStart, periodEnd, dueDate, description, amountCents } = params;
 
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -32,7 +33,7 @@ export class InvoiceService {
       select: { userId: true },
     });
 
-    const amountCents = tenant.settings.monthlyDuesCents;
+    const invoiceAmountCents = amountCents ?? tenant.settings.monthlyDuesCents;
     const desc =
       description ??
       `HOA Dues ${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}`;
@@ -43,7 +44,7 @@ export class InvoiceService {
           data: {
             tenantId,
             userId: m.userId,
-            amountCents,
+            amountCents: invoiceAmountCents,
             description: desc,
             periodStart,
             periodEnd,

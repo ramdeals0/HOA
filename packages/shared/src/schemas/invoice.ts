@@ -5,6 +5,7 @@ export const generateInvoicesSchema = z.object({
   periodEnd: z.string().datetime(),
   dueDate: z.string().datetime(),
   description: z.string().optional(),
+  amountCents: z.number().int().positive().optional(),
 });
 
 export type GenerateInvoicesInput = z.infer<typeof generateInvoicesSchema>;

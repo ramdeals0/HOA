@@ -24,7 +24,9 @@ function formatInputDate(date: Date) {
 
 function defaultFromDate() {
   const date = new Date();
-  date.setMonth(date.getMonth() - 11);
+  date.setFullYear(date.getFullYear() - 3);
+  date.setMonth(0);
+  date.setDate(1);
   return formatInputDate(date);
 }
 
