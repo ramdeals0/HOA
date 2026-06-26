@@ -1,0 +1,32 @@
+# HOA API — Railway / Docker production image
+FROM node:20-alpine AS base
+RUN apk add --no-cache openssl libc6-compat
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+RUN pnpm install --frozen-lockfile
+
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN pnpm --filter @hoa/shared build
+RUN pnpm --filter @hoa/api build
+
+FROM base AS runner
+ENV NODE_ENV=production
+WORKDIR /app
+
+COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/.npmrc ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages/shared ./packages/shared
+COPY --from=builder /app/apps/api ./apps/api
+
+WORKDIR /app/apps/api
+EXPOSE 4000
+
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && if [ \"$SEED_DATABASE\" = \"true\" ]; then pnpm exec tsx prisma/seed.ts; fi && node dist/index.js"]
