@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SignOutButton } from '@/components/auth/sign-out-button';
 
 export function SiteHeader() {
   return (
@@ -54,7 +55,8 @@ export function PortalNav({ slug, role }: { slug: string; role?: string }) {
   const isStaff = role && ['SUPER_ADMIN', 'BOARD', 'MANAGER'].includes(role);
 
   return (
-    <nav className="flex flex-col gap-1 text-sm">
+    <nav className="flex min-h-[calc(100vh-2rem)] flex-col gap-1 text-sm">
+      <div className="flex flex-1 flex-col gap-1">
       <Link href={`/t/${slug}/portal`} className="rounded px-3 py-2 hover:bg-gray-100">
         Dashboard
       </Link>
@@ -99,6 +101,10 @@ export function PortalNav({ slug, role }: { slug: string; role?: string }) {
           Maintenance Board
         </Link>
       )}
+      </div>
+      <div className="mt-6 border-t pt-4">
+        <SignOutButton className="w-full justify-center" variant="ghost" />
+      </div>
     </nav>
   );
 }
