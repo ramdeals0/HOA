@@ -222,6 +222,41 @@ async function main() {
     }
   }
 
+  // Historical paid invoices and payments (past 11 months for first 5 members)
+  for (let monthOffset = 1; monthOffset <= 11; monthOffset++) {
+    const histPeriodStart = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+    const histPeriodEnd = new Date(now.getFullYear(), now.getMonth() - monthOffset + 1, 0);
+    const histDueDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 15);
+    const paidAt = new Date(now.getFullYear(), now.getMonth() - monthOffset, 18);
+
+    for (let i = 0; i < 5; i++) {
+      const invoice = await prisma.invoice.create({
+        data: {
+          tenantId: whisperGroves.id,
+          userId: members[i].member.id,
+          amountCents: 15000,
+          description: `HOA Dues ${histPeriodStart.toLocaleDateString()} - ${histPeriodEnd.toLocaleDateString()}`,
+          periodStart: histPeriodStart,
+          periodEnd: histPeriodEnd,
+          dueDate: histDueDate,
+          status: 'PAID',
+          createdAt: histPeriodStart,
+        },
+      });
+
+      await prisma.payment.create({
+        data: {
+          tenantId: whisperGroves.id,
+          invoiceId: invoice.id,
+          userId: members[i].member.id,
+          amountCents: 15000,
+          status: 'SUCCEEDED',
+          createdAt: paidAt,
+        },
+      });
+    }
+  }
+
   // Documents
   await prisma.document.createMany({
     data: [

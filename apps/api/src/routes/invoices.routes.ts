@@ -1,14 +1,16 @@
 import { Router } from 'express';
-import { generateInvoicesSchema, updateTenantSchema } from '@hoa/shared';
+import { generateInvoicesSchema, paymentHistoryQuerySchema, updateTenantSchema } from '@hoa/shared';
 import { asyncHandler, AppError } from '../lib/types';
 import { requireAuth, requireTenantMembership, requireTenantRole } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { invoiceService } from '../services/invoice.service';
+import { PaymentService } from '../services/payment.service';
+import { createEmailService } from '../services/email.service';
 import { TenantService } from '../services/auth.service';
-import { prisma } from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
 const tenantService = new TenantService();
+const paymentService = new PaymentService(createEmailService());
 
 router.use(resolveTenant, requireTenant);
 
@@ -69,15 +71,20 @@ router.get(
   requireAuth,
   requireTenantMembership,
   asyncHandler(async (req, res) => {
+    const query = paymentHistoryQuerySchema.parse(req.query);
+    const from = query.from ? new Date(`${query.from}T00:00:00.000Z`) : undefined;
+    const to = query.to ? new Date(`${query.to}T23:59:59.999Z`) : undefined;
+
     const [invoices, payments] = await Promise.all([
       invoiceService.getMyInvoices(req.tenant!.tenantId, req.auth!.userId),
-      prisma.payment.findMany({
-        where: { tenantId: req.tenant!.tenantId, userId: req.auth!.userId },
-        orderBy: { createdAt: 'desc' },
-        include: { invoice: true },
-      }),
+      paymentService.getMyPayments(req.tenant!.tenantId, req.auth!.userId, { from, to }),
     ]);
-    res.json({ invoices, payments });
+
+    res.json({
+      invoices,
+      payments,
+      filters: { from: query.from ?? null, to: query.to ?? null },
+    });
   }),
 );
 
