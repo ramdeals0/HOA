@@ -90,3 +90,18 @@ Configure test keys in `.env` or per-tenant in admin settings. Webhook endpoint:
 ## Email
 
 Set `EMAIL_PROVIDER=memory` (default) or `EMAIL_PROVIDER=smtp` with SMTP credentials.
+
+## Deploy to Railway
+
+See **[RAILWAY.md](./RAILWAY.md)** for step-by-step deployment:
+
+1. Add PostgreSQL + two services (`Dockerfile.api`, `Dockerfile.web`)
+2. Set env vars (`DATABASE_URL`, `JWT_SECRET`, `NEXT_PUBLIC_API_URL`, etc.)
+3. First deploy with `SEED_DATABASE=true` on API
+
+Quick dashboard setup:
+
+| Service | Dockerfile | Key env vars |
+|---------|------------|--------------|
+| `hoa-api` | `Dockerfile.api` | `DATABASE_URL`, `JWT_SECRET`, `CORS_ORIGIN`, `WEB_URL` |
+| `hoa-web` | `Dockerfile.web` | `NEXT_PUBLIC_API_URL` |

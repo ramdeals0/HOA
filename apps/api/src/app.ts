@@ -19,12 +19,18 @@ import saasAdminRoutes from './routes/saas-admin.routes';
 
 dotenv.config();
 
+function getCorsOrigins(): string | string[] {
+  const raw = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+  const origins = raw.split(',').map((o) => o.trim()).filter(Boolean);
+  return origins.length === 1 ? origins[0] : origins;
+}
+
 export function createApp() {
   const app = express();
 
   app.use(
     cors({
-      origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000',
+      origin: getCorsOrigins(),
       credentials: true,
     }),
   );
