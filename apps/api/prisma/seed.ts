@@ -313,6 +313,22 @@ async function main() {
         description: 'Wrap-up of the year and preview of upcoming projects.',
         meetingType: 'ANNUAL',
       },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Summer Community BBQ',
+        scheduledAt: new Date(year, 6, 12, 17, 0),
+        location: 'Pool Pavilion',
+        description: 'Annual cookout with neighbors. Bring a side dish to share.',
+        meetingType: 'SOCIAL',
+      },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Neighborhood Garage Sale',
+        scheduledAt: new Date(year, 5, 7, 8, 0),
+        location: 'Throughout Whisper Groves',
+        description: 'Community-wide garage sale day. Map available in the portal.',
+        meetingType: 'SOCIAL',
+      },
     ],
   });
 

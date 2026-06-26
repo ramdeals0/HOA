@@ -8,16 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { api, tenantApi, formatCurrency, formatDate } from '@/lib/api';
-
-function formatMeetingDate(date: string) {
-  return new Date(date).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'long',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
+import { formatMeetingDateTime } from '@/lib/meetings';
 
 export default function PortalDashboard() {
   const params = useParams();
@@ -124,8 +115,15 @@ export default function PortalDashboard() {
           {/* Yearly meeting schedule */}
           <Card>
             <CardHeader>
-              <CardTitle>Yearly Meeting Schedule</CardTitle>
-              <CardDescription>{year} community meetings</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Yearly Meeting Schedule</CardTitle>
+                  <CardDescription>{year} community meetings</CardDescription>
+                </div>
+                <Link href={`/t/${slug}/portal/events`} className="text-sm text-blue-600 hover:underline">
+                  View calendar
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               {(meetings?.meetings ?? []).length === 0 ? (
@@ -145,7 +143,7 @@ export default function PortalDashboard() {
                             {meeting.meetingType}
                           </Badge>
                         </div>
-                        <p className="mt-1 text-sm text-gray-600">{formatMeetingDate(meeting.scheduledAt)}</p>
+                        <p className="mt-1 text-sm text-gray-600">{formatMeetingDateTime(meeting.scheduledAt)}</p>
                         {meeting.location && (
                           <p className="mt-1 text-xs text-gray-500">{meeting.location}</p>
                         )}

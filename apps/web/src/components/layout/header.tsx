@@ -69,6 +69,9 @@ export function PortalNav({ slug, role }: { slug: string; role?: string }) {
       <Link href={`/t/${slug}/portal/maintenance`} className="rounded px-3 py-2 hover:bg-gray-100">
         Maintenance
       </Link>
+      <Link href={`/t/${slug}/portal/events`} className="rounded px-3 py-2 hover:bg-gray-100">
+        Events Calendar
+      </Link>
       <Link href={`/t/${slug}/portal/classifieds/new`} className="rounded px-3 py-2 hover:bg-gray-100">
         Post Classified
       </Link>
@@ -90,6 +93,9 @@ export function PortalNav({ slug, role }: { slug: string; role?: string }) {
           </Link>
           <Link href={`/t/${slug}/admin/invoices`} className="rounded px-3 py-2 hover:bg-gray-100">
             Dues & Invoices
+          </Link>
+          <Link href={`/t/${slug}/admin/meetings`} className="rounded px-3 py-2 hover:bg-gray-100">
+            Events Calendar
           </Link>
           <Link href={`/t/${slug}/admin/documents`} className="rounded px-3 py-2 hover:bg-gray-100">
             Documents
