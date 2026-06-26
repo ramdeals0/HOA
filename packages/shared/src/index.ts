@@ -10,3 +10,4 @@ export * from './schemas/blast';
 export * from './schemas/document';
 export * from './schemas/invoice';
 export * from './schemas/meeting';
+export * from './schemas/directory';

@@ -130,6 +130,57 @@ async function main() {
     members.push({ member, property });
   }
 
+  await prisma.user.update({
+    where: { id: members[0].member.id },
+    data: {
+      phone: '(555) 555-0101',
+      photoUrl: 'https://i.pravatar.cc/150?u=member1',
+    },
+  });
+  await prisma.user.update({
+    where: { id: members[1].member.id },
+    data: { phone: '(555) 555-0102' },
+  });
+
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: members[0].member.id },
+    },
+    data: {
+      showInDirectory: true,
+      directoryShareEmail: true,
+      directorySharePhone: true,
+      directoryShareAddress: true,
+      directorySharePhoto: true,
+    },
+  });
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: members[1].member.id },
+    },
+    data: {
+      showInDirectory: true,
+      directorySharePhone: true,
+      directoryShareAddress: true,
+    },
+  });
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: members[2].member.id },
+    },
+    data: { showInDirectory: true },
+  });
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: board1.id },
+    },
+    data: {
+      showInDirectory: true,
+      directoryShareEmail: true,
+      directoryShareAddress: true,
+    },
+  });
+
   // Sample news
   await prisma.newsPost.createMany({
     data: [

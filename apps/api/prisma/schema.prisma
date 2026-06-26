@@ -89,6 +89,7 @@ model User {
   firstName       String   @map("first_name")
   lastName        String   @map("last_name")
   phone           String?
+  photoUrl        String?  @map("photo_url")
   isPlatformOwner Boolean  @default(false) @map("is_platform_owner")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -162,13 +163,18 @@ model TenantSettings {
 }
 
 model TenantUser {
-  id        String           @id @default(uuid())
-  tenantId  String           @map("tenant_id")
-  userId    String           @map("user_id")
-  role      Role
-  status    TenantUserStatus @default(ACTIVE)
-  createdAt DateTime         @default(now()) @map("created_at")
-  updatedAt DateTime         @updatedAt @map("updated_at")
+  id                    String           @id @default(uuid())
+  tenantId              String           @map("tenant_id")
+  userId                String           @map("user_id")
+  role                  Role
+  status                TenantUserStatus @default(ACTIVE)
+  showInDirectory       Boolean          @default(false) @map("show_in_directory")
+  directoryShareEmail   Boolean          @default(false) @map("directory_share_email")
+  directorySharePhone   Boolean          @default(false) @map("directory_share_phone")
+  directoryShareAddress Boolean          @default(false) @map("directory_share_address")
+  directorySharePhoto   Boolean          @default(false) @map("directory_share_photo")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -176,6 +182,7 @@ model TenantUser {
   @@unique([tenantId, userId])
   @@index([tenantId])
   @@index([userId])
+  @@index([tenantId, showInDirectory])
   @@map("tenant_users")
 }
 

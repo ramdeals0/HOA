@@ -72,6 +72,12 @@ export function PortalNav({ slug, role }: { slug: string; role?: string }) {
       <Link href={`/t/${slug}/portal/events`} className="rounded px-3 py-2 hover:bg-gray-100">
         Events Calendar
       </Link>
+      <Link href={`/t/${slug}/portal/directory`} className="rounded px-3 py-2 hover:bg-gray-100">
+        Resident Directory
+      </Link>
+      <Link href={`/t/${slug}/portal/settings`} className="rounded px-3 py-2 hover:bg-gray-100">
+        Privacy Settings
+      </Link>
       <Link href={`/t/${slug}/portal/classifieds/new`} className="rounded px-3 py-2 hover:bg-gray-100">
         Post Classified
       </Link>
