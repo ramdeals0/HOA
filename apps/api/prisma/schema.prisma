@@ -137,6 +137,7 @@ model Tenant {
   payments              Payment[]
   documents             Document[]
   maintenanceRequests   MaintenanceRequest[]
+  communityMeetings     CommunityMeeting[]
 
   @@index([slug])
   @@map("tenants")
@@ -377,4 +378,22 @@ model MaintenanceRequest {
   @@index([tenantId])
   @@index([status])
   @@map("maintenance_requests")
+}
+
+model CommunityMeeting {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  title       String
+  scheduledAt DateTime @map("scheduled_at")
+  location    String?
+  description String?
+  meetingType String   @default("GENERAL") @map("meeting_type")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([scheduledAt])
+  @@map("community_meetings")
 }

@@ -61,6 +61,7 @@ async function main() {
   await prisma.payment.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.maintenanceRequest.deleteMany();
+  await prisma.communityMeeting.deleteMany();
   await prisma.document.deleteMany();
   await prisma.classifiedListing.deleteMany();
   await prisma.blastMessage.deleteMany();
@@ -265,6 +266,44 @@ async function main() {
     },
   });
 
+  const year = new Date().getFullYear();
+  await prisma.communityMeeting.createMany({
+    data: [
+      {
+        tenantId: whisperGroves.id,
+        title: 'Annual HOA Meeting',
+        scheduledAt: new Date(year, 2, 15, 18, 0),
+        location: 'Community Clubhouse',
+        description: 'Annual membership meeting — budget vote and board elections.',
+        meetingType: 'ANNUAL',
+      },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Spring Board Meeting',
+        scheduledAt: new Date(year, 4, 20, 18, 30),
+        location: 'Community Clubhouse',
+        description: 'Open session for homeowner questions.',
+        meetingType: 'BOARD',
+      },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Budget & Dues Review',
+        scheduledAt: new Date(year, 8, 10, 18, 0),
+        location: 'Virtual (Zoom link in member portal)',
+        description: 'Review proposed dues and reserve fund allocations.',
+        meetingType: 'SPECIAL',
+      },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Year-End Community Meeting',
+        scheduledAt: new Date(year, 11, 5, 18, 0),
+        location: 'Community Clubhouse',
+        description: 'Wrap-up of the year and preview of upcoming projects.',
+        meetingType: 'ANNUAL',
+      },
+    ],
+  });
+
   // Tenant 2: Lakeside
   const lakeside = await createTenantWithData({
     name: 'Sample Lakeside HOA',
@@ -304,6 +343,25 @@ async function main() {
       isPublic: true,
       isPublished: true,
     },
+  });
+
+  await prisma.communityMeeting.createMany({
+    data: [
+      {
+        tenantId: lakeside.id,
+        title: 'Annual HOA Meeting',
+        scheduledAt: new Date(year, 3, 12, 17, 30),
+        location: 'Lakeside Pavilion',
+        meetingType: 'ANNUAL',
+      },
+      {
+        tenantId: lakeside.id,
+        title: 'Fall Board Meeting',
+        scheduledAt: new Date(year, 9, 8, 18, 0),
+        location: 'Lakeside Pavilion',
+        meetingType: 'BOARD',
+      },
+    ],
   });
 
   console.log('Seed complete!');

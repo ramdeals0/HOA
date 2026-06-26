@@ -15,6 +15,8 @@ import paymentsRoutes, { paymentsTenantRouter } from './routes/payments.routes';
 import documentsRoutes from './routes/documents.routes';
 import maintenanceRoutes from './routes/maintenance.routes';
 import membersRoutes from './routes/members.routes';
+import accountRoutes from './routes/account.routes';
+import meetingsRoutes from './routes/meetings.routes';
 import saasAdminRoutes from './routes/saas-admin.routes';
 
 dotenv.config();
@@ -69,6 +71,8 @@ export function createApp() {
   tenantApi.use('/documents', documentsRoutes);
   tenantApi.use('/maintenance', maintenanceRoutes);
   tenantApi.use('/members', membersRoutes);
+  tenantApi.use('/account', accountRoutes);
+  tenantApi.use('/meetings', meetingsRoutes);
 
   app.use('/api/t/:tenantSlug', tenantApi);
 
