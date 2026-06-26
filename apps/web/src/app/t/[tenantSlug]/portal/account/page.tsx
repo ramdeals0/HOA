@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import Link from 'next/link';
 import { PortalNav } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { api, tenantApi } from '@/lib/api';
+import { api, tenantApi, formatCurrency, formatDate } from '@/lib/api';
 
 export default function AccountPage() {
   const params = useParams();
@@ -29,6 +30,22 @@ export default function AccountPage() {
         membership: { role: string; status: string } | null;
       }>(slug, '/account'),
   });
+
+  const { data: invoicesData } = useQuery({
+    queryKey: ['my-invoices', slug],
+    queryFn: () =>
+      tenantApi<{
+        invoices: Array<{
+          id: string;
+          amountCents: number;
+          dueDate: string;
+          status: string;
+          description: string;
+        }>;
+      }>(slug, '/invoices/my'),
+  });
+
+  const invoices = invoicesData?.invoices ?? [];
 
   const [phone, setPhone] = useState('');
   const [emailNews, setEmailNews] = useState(true);
@@ -59,6 +76,21 @@ export default function AccountPage() {
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to save');
     }
+  }
+
+  async function payNow(invoiceId: string) {
+    const session = await tenantApi<{ url: string }>(slug, '/payments/checkout-session', {
+      method: 'POST',
+      body: JSON.stringify({ invoiceId }),
+    });
+    if (session.url) window.location.href = session.url;
+  }
+
+  function statusVariant(status: string): 'success' | 'warning' | 'destructive' | 'outline' {
+    if (status === 'PAID') return 'success';
+    if (status === 'OVERDUE') return 'destructive';
+    if (status === 'OPEN') return 'warning';
+    return 'outline';
   }
 
   return (
@@ -140,6 +172,58 @@ export default function AccountPage() {
                       </li>
                     ))}
                   </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Invoices</CardTitle>
+                    <CardDescription>Your HOA dues and billing history</CardDescription>
+                  </div>
+                  <Link href={`/t/${slug}/portal/payments`} className="text-sm text-blue-600 hover:underline">
+                    View all statements
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {invoices.length === 0 ? (
+                  <p className="text-sm text-gray-500">No invoices on your account yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-gray-500">
+                          <th className="pb-2 font-medium">Description</th>
+                          <th className="pb-2 font-medium">Due date</th>
+                          <th className="pb-2 font-medium">Amount</th>
+                          <th className="pb-2 font-medium">Status</th>
+                          <th className="pb-2 font-medium"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {invoices.map((inv) => (
+                          <tr key={inv.id} className="border-b last:border-0">
+                            <td className="py-3 pr-4">{inv.description}</td>
+                            <td className="py-3 pr-4 whitespace-nowrap">{formatDate(inv.dueDate)}</td>
+                            <td className="py-3 pr-4 font-medium">{formatCurrency(inv.amountCents)}</td>
+                            <td className="py-3 pr-4">
+                              <Badge variant={statusVariant(inv.status)}>{inv.status}</Badge>
+                            </td>
+                            <td className="py-3 text-right">
+                              {(inv.status === 'OPEN' || inv.status === 'OVERDUE') && (
+                                <Button size="sm" onClick={() => payNow(inv.id)}>
+                                  Pay now
+                                </Button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </CardContent>
             </Card>
