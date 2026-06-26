@@ -59,7 +59,7 @@ router.post(
 router.post(
   '/logout',
   asyncHandler(async (_req, res) => {
-    res.clearCookie(COOKIE_NAME, { path: '/' });
+    res.clearCookie(COOKIE_NAME, cookieOptions());
     res.json({ success: true });
   }),
 );
