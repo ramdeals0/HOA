@@ -12,7 +12,7 @@ export function PortalSessionInfo({ compact = false }: { compact?: boolean }) {
   });
 
   const userName = formatUserDisplayName(me?.user);
-  const hoaName = me?.currentTenant?.name ?? 'Community Portal';
+  const hoaName = me?.currentTenant?.name ?? 'No community selected';
   const roleLabel = formatRoleLabel(me?.currentTenant?.role);
   const tenantCount = me?.tenants?.length ?? 0;
 
@@ -23,7 +23,7 @@ export function PortalSessionInfo({ compact = false }: { compact?: boolean }) {
         <p className="truncate text-sm font-semibold text-gray-900">{userName}</p>
         <p className="truncate text-xs text-gray-500">{hoaName}</p>
         <Link href="/select-community" className="mt-1 inline-block text-xs text-blue-600 hover:underline">
-          Change community
+          {me?.currentTenant ? 'Change community' : 'Select community'}
         </Link>
       </div>
     );
@@ -43,8 +43,15 @@ export function PortalSessionInfo({ compact = false }: { compact?: boolean }) {
         href="/select-community"
         className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline"
       >
-        Change community{tenantCount > 1 ? ` (${tenantCount} available)` : ''}
+        {me?.currentTenant ? 'Change community' : 'Select community'}
+        {tenantCount > 1 ? ` (${tenantCount} available)` : ''}
       </Link>
+
+      {me?.user?.isPlatformOwner && (
+        <Link href="/saas-admin" className="mt-2 block text-sm text-blue-600 hover:underline">
+          Open platform admin
+        </Link>
+      )}
     </div>
   );
 }

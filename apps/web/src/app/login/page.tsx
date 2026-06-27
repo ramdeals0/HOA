@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { SiteFooter } from '@/components/layout/site-footer';
 import { api } from '@/lib/api';
 import { getSafeRedirectPath } from '@/lib/auth-routes';
+import { switchTenantSession } from '@/lib/switch-tenant';
+import { tenantPortalPath } from '@/lib/session-token';
 
 const VILLA_IMAGE =
   'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1920&q=80';
@@ -25,10 +27,7 @@ function LoginPageContent() {
     Array<{ tenantId: string; tenantName: string; tenantSlug: string; role: string }>
   >([]);
   const [showTenantPicker, setShowTenantPicker] = useState(false);
-
-  function postLoginPath(fallback: string) {
-    return redirectPath ?? fallback;
-  }
+  const [selectingTenantId, setSelectingTenantId] = useState<string | null>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -37,6 +36,7 @@ function LoginPageContent() {
       const result = await api<{
         autoSelected: boolean;
         selectedTenant?: { slug: string };
+        user: { isPlatformOwner?: boolean };
         tenants: Array<{ tenantId: string; tenantName: string; tenantSlug: string; role: string }>;
       }>('/api/auth/login', {
         method: 'POST',
@@ -44,21 +44,21 @@ function LoginPageContent() {
       });
 
       if (result.autoSelected && result.selectedTenant) {
-        router.push(postLoginPath(`/t/${result.selectedTenant.slug}/portal`));
+        window.location.assign(tenantPortalPath(result.selectedTenant.slug, redirectPath));
         return;
       }
 
       if (result.tenants.length === 0) {
+        if (result.user.isPlatformOwner) {
+          window.location.assign('/saas-admin');
+          return;
+        }
         router.push('/signup');
         return;
       }
 
       if (result.tenants.length === 1) {
-        await api('/api/auth/select-tenant', {
-          method: 'POST',
-          body: JSON.stringify({ tenantId: result.tenants[0].tenantId }),
-        });
-        router.push(postLoginPath(`/t/${result.tenants[0].tenantSlug}/portal`));
+        await switchTenantSession(result.tenants[0].tenantId, result.tenants[0].tenantSlug, redirectPath);
         return;
       }
 
@@ -70,11 +70,14 @@ function LoginPageContent() {
   }
 
   async function selectTenant(tenantId: string, slug: string) {
-    await api('/api/auth/select-tenant', {
-      method: 'POST',
-      body: JSON.stringify({ tenantId }),
-    });
-    router.push(postLoginPath(`/t/${slug}/portal`));
+    setSelectingTenantId(tenantId);
+    setError('');
+    try {
+      await switchTenantSession(tenantId, slug, redirectPath);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to select community.');
+      setSelectingTenantId(null);
+    }
   }
 
   return (
@@ -178,16 +181,22 @@ function LoginPageContent() {
                     </form>
                   ) : (
                     <div className="space-y-3">
-                      <p className="text-sm text-gray-600">Choose your community:</p>
+                      <p className="text-sm font-medium text-gray-900">Choose your association</p>
+                      <p className="text-sm text-gray-600">
+                        This account belongs to more than one HOA. Select which community to open.
+                      </p>
                       {tenants.map((t) => (
                         <button
                           key={t.tenantId}
                           type="button"
+                          disabled={selectingTenantId === t.tenantId}
                           onClick={() => selectTenant(t.tenantId, t.tenantSlug)}
-                          className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-200 hover:bg-blue-50"
+                          className="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white p-4 text-left transition hover:border-blue-200 hover:bg-blue-50 disabled:opacity-60"
                         >
                           <span className="font-medium">{t.tenantName}</span>
-                          <span className="text-sm text-gray-500">{t.role}</span>
+                          <span className="text-sm text-gray-500">
+                            {selectingTenantId === t.tenantId ? 'Opening...' : t.role}
+                          </span>
                         </button>
                       ))}
                     </div>

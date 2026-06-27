@@ -16,6 +16,10 @@ export function isProtectedPath(pathname: string) {
   return /^\/t\/[^/]+\/(portal|admin)(\/.*)?$/.test(pathname);
 }
 
+export function requiresTenantSelection(pathname: string) {
+  return /^\/t\/[^/]+\/(portal|admin)(\/.*)?$/.test(pathname);
+}
+
 export function getLoginRedirectUrl(requestUrl: string, pathname: string) {
   const loginUrl = new URL('/login', requestUrl);
   loginUrl.searchParams.set('redirect', pathname);

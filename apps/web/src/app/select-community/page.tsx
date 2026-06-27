@@ -1,8 +1,8 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { PortalNav } from '@/components/layout/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,9 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { AuthMeResponse, formatRoleLabel, formatUserDisplayName } from '@/lib/auth-types';
 import { getSafeRedirectPath } from '@/lib/auth-routes';
+import { switchTenantSession } from '@/lib/switch-tenant';
+import { tenantPortalPath } from '@/lib/session-token';
 
 function SelectCommunityContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = getSafeRedirectPath(searchParams.get('redirect'));
   const [switchingId, setSwitchingId] = useState<string | null>(null);
@@ -27,20 +28,17 @@ function SelectCommunityContent() {
   const currentSlug = me?.currentTenant?.slug;
   const slugForNav = currentSlug ?? me?.tenants[0]?.tenant.slug ?? 'whisper-groves';
 
-  async function switchCommunity(tenantId: string, slug: string) {
-    if (tenantId === me?.currentTenant?.id) {
-      router.push(redirectPath ?? `/t/${slug}/portal`);
-      return;
-    }
-
+  async function handleSelect(tenantId: string, slug: string) {
     setSwitchingId(tenantId);
     setError('');
+
     try {
-      await api('/api/auth/select-tenant', {
-        method: 'POST',
-        body: JSON.stringify({ tenantId }),
-      });
-      window.location.assign(redirectPath ?? `/t/${slug}/portal`);
+      if (tenantId === me?.currentTenant?.id) {
+        window.location.assign(tenantPortalPath(slug, redirectPath));
+        return;
+      }
+
+      await switchTenantSession(tenantId, slug, redirectPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to switch community.');
       setSwitchingId(null);
@@ -54,18 +52,18 @@ function SelectCommunityContent() {
       </aside>
       <main className="flex-1 p-4 sm:p-8">
         <div className="mx-auto max-w-2xl">
-          <h1 className="text-2xl font-bold sm:text-3xl">Change Community</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">Select Community</h1>
           <p className="mt-1 text-sm text-gray-500">
             Signed in as {formatUserDisplayName(me?.user)}. Choose which HOA portal to open.
           </p>
 
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Your communities</CardTitle>
+              <CardTitle>Your associations</CardTitle>
               <CardDescription>
                 {me?.currentTenant
                   ? `Currently viewing ${me.currentTenant.name}.`
-                  : 'Select a community to continue.'}
+                  : 'Pick an association to continue.'}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -73,7 +71,14 @@ function SelectCommunityContent() {
               {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
               {!isLoading && (me?.tenants?.length ?? 0) === 0 && (
-                <p className="text-sm text-gray-500">No active community memberships found.</p>
+                <div className="space-y-3 text-sm text-gray-500">
+                  <p>No active community memberships found for this account.</p>
+                  {me?.user?.isPlatformOwner && (
+                    <Link href="/saas-admin" className="inline-block text-blue-600 hover:underline">
+                      Open platform admin
+                    </Link>
+                  )}
+                </div>
               )}
 
               <ul className="space-y-3">
@@ -96,13 +101,13 @@ function SelectCommunityContent() {
                           size="sm"
                           variant={isCurrent ? 'outline' : 'default'}
                           disabled={switchingId === membership.tenantId}
-                          onClick={() => switchCommunity(membership.tenantId, membership.tenant.slug)}
+                          onClick={() => handleSelect(membership.tenantId, membership.tenant.slug)}
                         >
                           {switchingId === membership.tenantId
-                            ? 'Switching...'
+                            ? 'Opening...'
                             : isCurrent
                               ? 'Open portal'
-                              : 'Switch here'}
+                              : 'Select association'}
                         </Button>
                       </div>
                     </li>
