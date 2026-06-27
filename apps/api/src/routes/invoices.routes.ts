@@ -76,14 +76,22 @@ router.get(
     const from = query.from ? new Date(`${query.from}T00:00:00.000Z`) : undefined;
     const to = query.to ? new Date(`${query.to}T23:59:59.999Z`) : undefined;
 
-    const [invoices, payments] = await Promise.all([
-      invoiceService.getMyInvoices(req.tenant!.tenantId, req.auth!.userId),
+    const [openInvoices, payments, paidInvoices] = await Promise.all([
+      invoiceService.getMyInvoices(req.tenant!.tenantId, req.auth!.userId, {
+        statuses: ['OPEN', 'OVERDUE'],
+      }),
       paymentService.getMyPayments(req.tenant!.tenantId, req.auth!.userId, { from, to }),
+      invoiceService.getMyInvoices(req.tenant!.tenantId, req.auth!.userId, {
+        statuses: ['PAID'],
+        from,
+        to,
+      }),
     ]);
 
     res.json({
-      invoices,
+      invoices: openInvoices,
       payments,
+      paidInvoices,
       filters: { from: query.from ?? null, to: query.to ?? null },
     });
   }),
