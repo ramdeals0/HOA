@@ -12,7 +12,7 @@ export default function ClassifiedsPage() {
     <TenantPublicShell
       slug={slug}
       title="Community Classifieds"
-      description="Buy, sell, and trade with your neighbors."
+      description="Buy, sell, and trade with your neighbors. Listings are automatically removed after 30 days."
     >
       <ClassifiedsList slug={slug} />
     </TenantPublicShell>

@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { PortalShell } from '@/components/layout/portal-shell';
 import { ClassifiedsList } from '@/components/classifieds/classifieds-list';
+import { MyClassifiedsPanel } from '@/components/classifieds/my-classifieds-panel';
 import { api } from '@/lib/api';
 
 export default function PortalClassifiedsPage() {
@@ -26,7 +27,14 @@ export default function PortalClassifiedsPage() {
         </p>
       </div>
 
-      <ClassifiedsList slug={slug} postHref={`/t/${slug}/portal/classifieds/new`} />
+      <MyClassifiedsPanel slug={slug} />
+
+      <ClassifiedsList
+        slug={slug}
+        postHref={`/t/${slug}/portal/classifieds/new`}
+        enableManageActions
+        editHrefPrefix={`/t/${slug}/portal/classifieds`}
+      />
     </PortalShell>
   );
 }

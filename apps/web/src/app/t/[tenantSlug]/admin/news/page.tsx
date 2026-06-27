@@ -8,7 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { api, tenantApi } from '@/lib/api';
+import { api, tenantApi, formatDate } from '@/lib/api';
+import { CONTENT_RETENTION_NOTICE, formatContentExpiryLabel } from '@/lib/content-retention';
+
+type NewsPost = {
+  id: string;
+  title: string;
+  body: string;
+  isPublic: boolean;
+  createdAt: string;
+};
 
 export default function AdminNewsPage() {
   const params = useParams();
@@ -17,6 +26,10 @@ export default function AdminNewsPage() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [editIsPublic, setEditIsPublic] = useState(true);
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -25,7 +38,7 @@ export default function AdminNewsPage() {
 
   const { data } = useQuery({
     queryKey: ['admin-news', slug],
-    queryFn: () => tenantApi<{ posts: Array<{ id: string; title: string; isPublic: boolean }> }>(slug, '/news'),
+    queryFn: () => tenantApi<{ posts: NewsPost[] }>(slug, '/news'),
   });
 
   async function createPost(e: React.FormEvent) {
@@ -37,6 +50,42 @@ export default function AdminNewsPage() {
     setTitle('');
     setBody('');
     qc.invalidateQueries({ queryKey: ['admin-news', slug] });
+    qc.invalidateQueries({ queryKey: ['news', slug] });
+  }
+
+  function startEdit(post: NewsPost) {
+    setEditingId(post.id);
+    setEditTitle(post.title);
+    setEditBody(post.body);
+    setEditIsPublic(post.isPublic);
+  }
+
+  async function saveEdit(postId: string) {
+    await tenantApi(slug, `/news/${postId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        title: editTitle,
+        body: editBody,
+        isPublic: editIsPublic,
+        isPublished: true,
+      }),
+    });
+    setEditingId(null);
+    qc.invalidateQueries({ queryKey: ['admin-news', slug] });
+    qc.invalidateQueries({ queryKey: ['news', slug] });
+  }
+
+  async function removePost(postId: string) {
+    if (!window.confirm('Remove this news post?')) {
+      return;
+    }
+
+    await tenantApi(slug, `/news/${postId}`, { method: 'DELETE' });
+    if (editingId === postId) {
+      setEditingId(null);
+    }
+    qc.invalidateQueries({ queryKey: ['admin-news', slug] });
+    qc.invalidateQueries({ queryKey: ['news', slug] });
   }
 
   return (
@@ -46,13 +95,22 @@ export default function AdminNewsPage() {
       </aside>
       <main className="flex-1 p-8">
         <h1 className="text-2xl font-bold">News Management</h1>
+        <p className="mt-2 text-sm text-gray-500">{CONTENT_RETENTION_NOTICE}</p>
 
         <Card className="mt-6">
-          <CardHeader><CardTitle>Create Post</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Create Post</CardTitle>
+          </CardHeader>
           <CardContent>
             <form onSubmit={createPost} className="space-y-4">
               <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-              <Textarea placeholder="Body (HTML supported)" value={body} onChange={(e) => setBody(e.target.value)} required rows={5} />
+              <Textarea
+                placeholder="Body (HTML supported)"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                required
+                rows={5}
+              />
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} />
                 Public post
@@ -62,12 +120,54 @@ export default function AdminNewsPage() {
           </CardContent>
         </Card>
 
-        <div className="mt-8 space-y-2">
+        <div className="mt-8 space-y-4">
           <h2 className="font-semibold">Existing Posts</h2>
-          {(data?.posts ?? []).map((p) => (
-            <div key={p.id} className="rounded border p-3 text-sm">
-              {p.title} {p.isPublic ? '(public)' : '(members only)'}
-            </div>
+          {(data?.posts ?? []).map((post) => (
+            <Card key={post.id}>
+              <CardContent className="space-y-4 pt-6">
+                {editingId === post.id ? (
+                  <>
+                    <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                    <Textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={5} />
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={editIsPublic}
+                        onChange={(e) => setEditIsPublic(e.target.checked)}
+                      />
+                      Public post
+                    </label>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => saveEdit(post.id)}>
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="font-medium">{post.title}</h3>
+                      <p className="mt-1 text-sm text-gray-600">
+                        {post.isPublic ? 'Public' : 'Members only'} · Posted {formatDate(post.createdAt)} ·{' '}
+                        {formatContentExpiryLabel(post.createdAt)}
+                      </p>
+                    </div>
+                    <div className="prose max-w-none text-sm" dangerouslySetInnerHTML={{ __html: post.body }} />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => startEdit(post)}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => removePost(post.id)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       </main>

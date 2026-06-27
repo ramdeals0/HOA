@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { createClassifiedSchema, updateClassifiedSchema } from '@hoa/shared';
 import { prisma } from '../lib/prisma';
+import { contentCreatedWithinRetention } from '../lib/content-retention';
 import { asyncHandler, AppError, param } from '../lib/types';
 import { optionalAuth, requireAuth, requireTenantMembership, requireTenantRole } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
@@ -19,11 +20,42 @@ router.get(
 
     const category = req.query.category as string | undefined;
     const search = req.query.search as string | undefined;
+    const mine = req.query.mine === 'true';
+
+    if (mine) {
+      if (!req.auth || req.auth.tenantId !== tenantId) {
+        throw new AppError(401, 'Authentication required');
+      }
+
+      const listings = await prisma.classifiedListing.findMany({
+        where: {
+          tenantId,
+          authorId: req.auth.userId,
+          deletedAt: null,
+          ...contentCreatedWithinRetention(),
+          ...(category ? { category } : {}),
+          ...(search
+            ? {
+                OR: [
+                  { title: { contains: search, mode: 'insensitive' } },
+                  { description: { contains: search, mode: 'insensitive' } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: { createdAt: 'desc' },
+        include: { author: { select: { firstName: true, lastName: true } } },
+      });
+
+      res.json({ listings });
+      return;
+    }
 
     const listings = await prisma.classifiedListing.findMany({
       where: {
         tenantId,
         deletedAt: null,
+        ...contentCreatedWithinRetention(),
         ...(isStaff && req.query.status
           ? { status: req.query.status as 'PENDING' | 'APPROVED' | 'REJECTED' }
           : isStaff && req.query.all === 'true'
@@ -71,7 +103,12 @@ router.patch(
   requireTenantMembership,
   asyncHandler(async (req, res) => {
     const listing = await prisma.classifiedListing.findFirst({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId, deletedAt: null },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        deletedAt: null,
+        ...contentCreatedWithinRetention(),
+      },
     });
     if (!listing) throw new AppError(404, 'Listing not found');
 
@@ -96,7 +133,11 @@ router.patch(
   requireTenantRole(['SUPER_ADMIN', 'BOARD']),
   asyncHandler(async (req, res) => {
     const listing = await prisma.classifiedListing.updateMany({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        ...contentCreatedWithinRetention(),
+      },
       data: { status: 'APPROVED', reviewedById: req.auth!.userId, reviewedAt: new Date() },
     });
     if (listing.count === 0) throw new AppError(404, 'Listing not found');
@@ -112,7 +153,11 @@ router.patch(
   requireTenantRole(['SUPER_ADMIN', 'BOARD']),
   asyncHandler(async (req, res) => {
     const listing = await prisma.classifiedListing.updateMany({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        ...contentCreatedWithinRetention(),
+      },
       data: { status: 'REJECTED', reviewedById: req.auth!.userId, reviewedAt: new Date() },
     });
     if (listing.count === 0) throw new AppError(404, 'Listing not found');
@@ -127,7 +172,11 @@ router.delete(
   requireTenantMembership,
   asyncHandler(async (req, res) => {
     const listing = await prisma.classifiedListing.findFirst({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        ...contentCreatedWithinRetention(),
+      },
     });
     if (!listing) throw new AppError(404, 'Listing not found');
 
