@@ -60,6 +60,9 @@ async function main() {
 
   await prisma.payment.deleteMany();
   await prisma.invoice.deleteMany();
+  await prisma.resolutionVote.deleteMany();
+  await prisma.resolutionOption.deleteMany();
+  await prisma.resolution.deleteMany();
   await prisma.maintenanceRequest.deleteMany();
   await prisma.communityMeeting.deleteMany();
   await prisma.document.deleteMany();
@@ -381,6 +384,98 @@ async function main() {
         meetingType: 'SOCIAL',
       },
     ],
+  });
+
+  const openResolution = await prisma.resolution.create({
+    data: {
+      tenantId: whisperGroves.id,
+      authorId: board1.id,
+      title: 'Approve 2026 Reserve Fund Allocation',
+      description:
+        'Board resolution to allocate reserve funds toward roof repairs and pool maintenance in 2026.',
+      type: 'RESOLUTION',
+      status: 'OPEN',
+      opensAt: new Date(year, 5, 1, 0, 0, 0),
+      closesAt: new Date(year, 7, 31, 23, 59, 59),
+      options: {
+        create: [
+          { label: 'Yes', sortOrder: 0 },
+          { label: 'No', sortOrder: 1 },
+          { label: 'Abstain', sortOrder: 2 },
+        ],
+      },
+    },
+    include: { options: true },
+  });
+
+  await prisma.resolutionVote.create({
+    data: {
+      resolutionId: openResolution.id,
+      optionId: openResolution.options[0].id,
+      userId: members[0].member.id,
+    },
+  });
+
+  const closedPoll = await prisma.resolution.create({
+    data: {
+      tenantId: whisperGroves.id,
+      authorId: board1.id,
+      title: 'Extend Pool Hours on Weekends?',
+      description: 'Community viewpoint poll on whether weekend pool hours should extend to 9 PM.',
+      type: 'VIEWPOINT',
+      status: 'CLOSED',
+      opensAt: new Date(year - 1, 5, 1, 0, 0, 0),
+      closesAt: new Date(year - 1, 5, 15, 23, 59, 59),
+      options: {
+        create: [
+          { label: 'Extend to 9 PM', sortOrder: 0 },
+          { label: 'Keep current hours', sortOrder: 1 },
+        ],
+      },
+    },
+    include: { options: true },
+  });
+
+  await prisma.resolutionVote.createMany({
+    data: [
+      {
+        resolutionId: closedPoll.id,
+        optionId: closedPoll.options[0].id,
+        userId: members[0].member.id,
+      },
+      {
+        resolutionId: closedPoll.id,
+        optionId: closedPoll.options[0].id,
+        userId: members[1].member.id,
+      },
+      {
+        resolutionId: closedPoll.id,
+        optionId: closedPoll.options[1].id,
+        userId: members[2].member.id,
+      },
+      {
+        resolutionId: closedPoll.id,
+        optionId: closedPoll.options[1].id,
+        userId: members[3].member.id,
+      },
+    ],
+  });
+
+  await prisma.resolution.create({
+    data: {
+      tenantId: whisperGroves.id,
+      authorId: board2.id,
+      title: 'Landscaping Vendor Contract Renewal',
+      description: 'Draft resolution for renewing the community landscaping contract.',
+      type: 'RESOLUTION',
+      status: 'DRAFT',
+      options: {
+        create: [
+          { label: 'Renew current vendor', sortOrder: 0 },
+          { label: 'Seek new bids', sortOrder: 1 },
+        ],
+      },
+    },
   });
 
   // Tenant 2: Lakeside

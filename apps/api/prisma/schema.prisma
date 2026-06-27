@@ -82,6 +82,17 @@ enum BlastStatus {
   FAILED
 }
 
+enum ResolutionType {
+  RESOLUTION
+  VIEWPOINT
+}
+
+enum ResolutionStatus {
+  DRAFT
+  OPEN
+  CLOSED
+}
+
 model User {
   id              String   @id @default(uuid())
   email           String   @unique
@@ -107,6 +118,8 @@ model User {
   documents             Document[]
   maintenanceRequests   MaintenanceRequest[]    @relation("Requester")
   assignedMaintenance   MaintenanceRequest[]    @relation("Assignee")
+  authoredResolutions   Resolution[]            @relation("ResolutionAuthor")
+  resolutionVotes       ResolutionVote[]
 
   @@map("users")
 }
@@ -139,6 +152,7 @@ model Tenant {
   documents             Document[]
   maintenanceRequests   MaintenanceRequest[]
   communityMeetings     CommunityMeeting[]
+  resolutions           Resolution[]
 
   @@index([slug])
   @@map("tenants")
@@ -403,4 +417,60 @@ model CommunityMeeting {
   @@index([tenantId])
   @@index([scheduledAt])
   @@map("community_meetings")
+}
+
+model Resolution {
+  id          String           @id @default(uuid())
+  tenantId    String           @map("tenant_id")
+  authorId    String           @map("author_id")
+  title       String
+  description String?
+  type        ResolutionType   @default(RESOLUTION)
+  status      ResolutionStatus @default(DRAFT)
+  opensAt     DateTime?        @map("opens_at")
+  closesAt    DateTime?        @map("closes_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  tenant  Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author  User               @relation("ResolutionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  options ResolutionOption[]
+  votes   ResolutionVote[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("resolutions")
+}
+
+model ResolutionOption {
+  id           String   @id @default(uuid())
+  resolutionId String   @map("resolution_id")
+  label        String
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  resolution Resolution       @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  votes      ResolutionVote[]
+
+  @@index([resolutionId])
+  @@map("resolution_options")
+}
+
+model ResolutionVote {
+  id           String   @id @default(uuid())
+  resolutionId String   @map("resolution_id")
+  optionId     String   @map("option_id")
+  userId       String   @map("user_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  resolution Resolution       @relation(fields: [resolutionId], references: [id], onDelete: Cascade)
+  option     ResolutionOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([resolutionId, userId])
+  @@index([resolutionId])
+  @@index([userId])
+  @@map("resolution_votes")
 }

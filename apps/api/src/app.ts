@@ -19,6 +19,7 @@ import accountRoutes from './routes/account.routes';
 import meetingsRoutes from './routes/meetings.routes';
 import directoryRoutes from './routes/directory.routes';
 import reportsRoutes from './routes/reports.routes';
+import resolutionsRoutes from './routes/resolutions.routes';
 import saasAdminRoutes from './routes/saas-admin.routes';
 
 dotenv.config();
@@ -77,6 +78,7 @@ export function createApp() {
   tenantApi.use('/meetings', meetingsRoutes);
   tenantApi.use('/directory', directoryRoutes);
   tenantApi.use('/reports', reportsRoutes);
+  tenantApi.use('/resolutions', resolutionsRoutes);
 
   app.use('/api/t/:tenantSlug', tenantApi);
 
