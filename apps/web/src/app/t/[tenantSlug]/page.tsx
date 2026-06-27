@@ -31,9 +31,9 @@ export default async function TenantHomePage({ params }: { params: { tenantSlug:
 
   return (
     <TenantProvider tenant={tenant}>
-      <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
         <TenantHeader slug={tenant.slug} name={tenant.name} />
-        <main>
+        <main className="flex-1">
           <section className="bg-gradient-to-b from-blue-50 to-white py-16">
             <div className="mx-auto max-w-4xl px-4 text-center">
               <h1 className="text-3xl font-bold sm:text-4xl" style={{ color: tenant.primaryColor ?? '#2563eb' }}>
@@ -53,28 +53,30 @@ export default async function TenantHomePage({ params }: { params: { tenantSlug:
             </div>
           </section>
 
-          <section className="mx-auto max-w-4xl px-4 py-12">
-            <h2 className="mb-6 text-2xl font-bold">Latest News</h2>
-            <div className="grid gap-4">
-              {posts.length === 0 ? (
-                <p className="text-gray-500">No public news posts yet.</p>
-              ) : (
-                posts.map((post) => (
-                  <Card key={post.id}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">
-                        <Link href={`/t/${tenant.slug}/news/${post.id}`} className="hover:underline">
-                          {post.title}
-                        </Link>
-                      </CardTitle>
-                      <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="line-clamp-2 text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: post.body }} />
-                    </CardContent>
-                  </Card>
-                ))
-              )}
+          <section className="bg-gray-50">
+            <div className="mx-auto max-w-4xl px-4 py-12">
+              <h2 className="mb-6 text-2xl font-bold">Latest News</h2>
+              <div className="grid gap-4">
+                {posts.length === 0 ? (
+                  <p className="text-gray-500">No public news posts yet.</p>
+                ) : (
+                  posts.map((post) => (
+                    <Card key={post.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">
+                          <Link href={`/t/${tenant.slug}/news/${post.id}`} className="hover:underline">
+                            {post.title}
+                          </Link>
+                        </CardTitle>
+                        <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="line-clamp-2 text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: post.body }} />
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </div>
           </section>
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { TenantPublicShell } from '@/components/layout/tenant-public-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -18,17 +19,24 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16">
-      <h1 className="text-2xl font-bold">Welcome! Let&apos;s set up your HOA</h1>
-      <div className="mt-4 flex gap-2">
+    <TenantPublicShell
+      slug={slug}
+      title="Welcome! Let's set up your HOA"
+      description="Complete these steps to get your community portal ready."
+      maxWidth="3xl"
+    >
+      <div className="mb-6 flex flex-wrap gap-2">
         {STEPS.map((s, i) => (
-          <div key={s} className={`rounded-full px-3 py-1 text-sm ${i === step ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <div
+            key={s}
+            className={`rounded-full px-3 py-1 text-sm ${i === step ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
             {i + 1}. {s}
           </div>
         ))}
       </div>
 
-      <Card className="mt-8">
+      <Card>
         <CardHeader><CardTitle>{STEPS[step]}</CardTitle></CardHeader>
         <CardContent>
           {step === 0 && (
@@ -54,6 +62,6 @@ export default function OnboardingPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </TenantPublicShell>
   );
 }
