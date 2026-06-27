@@ -58,11 +58,36 @@ export class InvoiceService {
     return invoices;
   }
 
-  async getMyInvoices(tenantId: string, userId: string) {
+  async getMyInvoices(
+    tenantId: string,
+    userId: string,
+    filters?: { from?: Date; to?: Date; statuses?: Array<'OPEN' | 'OVERDUE' | 'PAID' | 'DRAFT' | 'VOID'> },
+  ) {
+    const where: {
+      tenantId: string;
+      userId: string;
+      status?: { in: Array<'OPEN' | 'OVERDUE' | 'PAID' | 'DRAFT' | 'VOID'> };
+      dueDate?: { gte?: Date; lte?: Date };
+    } = { tenantId, userId };
+
+    if (filters?.statuses?.length) {
+      where.status = { in: filters.statuses };
+    }
+
+    if (filters?.from || filters?.to) {
+      where.dueDate = {};
+      if (filters.from) {
+        where.dueDate.gte = filters.from;
+      }
+      if (filters.to) {
+        where.dueDate.lte = filters.to;
+      }
+    }
+
     return prisma.invoice.findMany({
-      where: { tenantId, userId },
+      where,
       orderBy: { dueDate: 'desc' },
-      include: { payments: true },
+      include: { payments: { orderBy: { createdAt: 'desc' }, take: 1 } },
     });
   }
 
