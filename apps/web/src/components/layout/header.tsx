@@ -93,6 +93,9 @@ export function PortalNav({
       <Link href={`/t/${slug}/portal/documents`} className={linkClassName} onClick={onNavigate}>
         Documents
       </Link>
+      <Link href={`/t/${slug}/portal/classifieds`} className={linkClassName} onClick={onNavigate}>
+        Classifieds
+      </Link>
       <Link href={`/t/${slug}/portal/classifieds/new`} className={linkClassName} onClick={onNavigate}>
         Post Classified
       </Link>
