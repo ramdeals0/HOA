@@ -5,6 +5,10 @@ export function getSessionCookieName() {
 }
 
 export function isProtectedPath(pathname: string) {
+  if (pathname === '/select-community') {
+    return true;
+  }
+
   if (pathname === '/saas-admin' || pathname.startsWith('/saas-admin/')) {
     return true;
   }

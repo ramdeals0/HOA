@@ -19,6 +19,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/select-community',
     '/saas-admin',
     '/saas-admin/:path*',
     '/t/:tenantSlug/portal',
