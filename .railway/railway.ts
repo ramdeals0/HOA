@@ -22,7 +22,7 @@ export default defineRailway(() => {
       DATABASE_URL: db.env.DATABASE_URL,
       NODE_ENV: "production",
       JWT_SECRET: preserve(),
-      COOKIE_CROSS_ORIGIN: "true",
+      COOKIE_CROSS_ORIGIN: "false",
       EMAIL_PROVIDER: "memory",
       SEED_DATABASE: preserve(),
       CORS_ORIGIN: preserve(),

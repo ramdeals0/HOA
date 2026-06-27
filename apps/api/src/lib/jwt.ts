@@ -23,10 +23,10 @@ export function verifyToken(token: string): JwtPayload {
 
 export function cookieOptions() {
   const isProd = process.env.NODE_ENV === 'production';
-  const crossOrigin = process.env.COOKIE_CROSS_ORIGIN === 'true' || isProd;
+  const crossOrigin = process.env.COOKIE_CROSS_ORIGIN === 'true';
   return {
     httpOnly: true,
-    secure: crossOrigin,
+    secure: isProd || crossOrigin,
     sameSite: (crossOrigin ? 'none' : 'lax') as 'none' | 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',

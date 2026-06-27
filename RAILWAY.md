@@ -32,7 +32,7 @@ This monorepo deploys as **3 Railway resources**:
 | `CORS_ORIGIN` | `https://<your-web-service>.up.railway.app` |
 | `WEB_URL` | `https://<your-web-service>.up.railway.app` |
 | `API_URL` | `https://<your-api-service>.up.railway.app` |
-| `COOKIE_CROSS_ORIGIN` | `true` |
+| `COOKIE_CROSS_ORIGIN` | `false` *(default; web proxies API so cookies are same-origin)* |
 | `EMAIL_PROVIDER` | `memory` (or `smtp` with SMTP vars) |
 | `STRIPE_SECRET_KEY` | your Stripe test/live key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
@@ -51,7 +51,7 @@ This monorepo deploys as **3 Railway resources**:
 | Variable | Value |
 |----------|-------|
 | `NODE_ENV` | `production` |
-| `NEXT_PUBLIC_API_URL` | `https://<your-api-service>.up.railway.app` |
+| `NEXT_PUBLIC_API_URL` | `https://<your-api-service>.up.railway.app` *(used at build time for the `/api` proxy)* |
 
 4. Deploy and copy the public URL.
 
@@ -136,7 +136,7 @@ Communities:
 | Issue | Fix |
 |-------|-----|
 | `ERR_PNPM_NO_PKG_MANIFEST` | Root Directory must be empty, not `apps/api` |
-| Login cookies not working | Set `COOKIE_CROSS_ORIGIN=true`, `CORS_ORIGIN` = exact web URL |
+| Login cookies not working | Web proxies `/api/*` to the API — redeploy **web** after setting `NEXT_PUBLIC_API_URL`. Keep `COOKIE_CROSS_ORIGIN=false` on API unless calling the API directly from the browser. |
 | DB connection failed | Ensure `DATABASE_URL` references Postgres service |
 | Web can't reach API | Set `NEXT_PUBLIC_API_URL` and redeploy web |
 | Empty database | Set `SEED_DATABASE=true` on API, redeploy once |
