@@ -20,6 +20,7 @@ import meetingsRoutes from './routes/meetings.routes';
 import directoryRoutes from './routes/directory.routes';
 import reportsRoutes from './routes/reports.routes';
 import resolutionsRoutes from './routes/resolutions.routes';
+import portalNavRoutes from './routes/portal-nav.routes';
 import saasAdminRoutes from './routes/saas-admin.routes';
 
 dotenv.config();
@@ -75,6 +76,7 @@ export function createApp() {
   tenantApi.use('/maintenance', maintenanceRoutes);
   tenantApi.use('/members', membersRoutes);
   tenantApi.use('/account', accountRoutes);
+  tenantApi.use('/portal-nav', portalNavRoutes);
   tenantApi.use('/meetings', meetingsRoutes);
   tenantApi.use('/directory', directoryRoutes);
   tenantApi.use('/reports', reportsRoutes);

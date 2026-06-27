@@ -102,7 +102,7 @@ export default function PortalDashboard() {
   return (
     <PortalShell slug={slug} role={role}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold sm:text-3xl">Dashboard</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">Home</h1>
         <p className="mt-1 text-sm text-gray-500">Welcome back to your community portal</p>
       </div>
 
