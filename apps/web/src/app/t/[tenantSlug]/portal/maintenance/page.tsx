@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { PortalNav } from '@/components/layout/header';
+import { PortalShell } from '@/components/layout/portal-shell';
+import { useOfflineAction } from '@/components/pwa/offline-action-provider';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { UpsellBanner } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +20,8 @@ export default function MaintenancePage() {
   const params = useParams();
   const slug = params.tenantSlug as string;
   const qc = useQueryClient();
+  const isOnline = useOnlineStatus();
+  const { guardAction } = useOfflineAction();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -56,29 +60,27 @@ export default function MaintenancePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
-    setSubmitted(false);
-    try {
-      await tenantApi(slug, '/maintenance', {
-        method: 'POST',
-        body: JSON.stringify({ title, description, priority }),
-      });
-      setTitle('');
-      setDescription('');
-      setPriority('MEDIUM');
-      setSubmitted(true);
-      qc.invalidateQueries({ queryKey: ['my-maintenance', slug] });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit request');
-    }
+    guardAction(async () => {
+      setError('');
+      setSubmitted(false);
+      try {
+        await tenantApi(slug, '/maintenance', {
+          method: 'POST',
+          body: JSON.stringify({ title, description, priority }),
+        });
+        setTitle('');
+        setDescription('');
+        setPriority('MEDIUM');
+        setSubmitted(true);
+        qc.invalidateQueries({ queryKey: ['my-maintenance', slug] });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to submit request');
+      }
+    });
   }
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 border-r bg-white p-4">
-        <PortalNav slug={slug} role={me?.currentTenant?.role} />
-      </aside>
-      <main className="flex-1 p-8">
+    <PortalShell slug={slug} role={me?.currentTenant?.role}>
         <h1 className="text-2xl font-bold">Maintenance Requests</h1>
 
         {!canUseMaintenance && (
@@ -127,7 +129,7 @@ export default function MaintenancePage() {
                 </div>
                 {error && <p className="text-sm text-red-600">{error}</p>}
                 {submitted && <p className="text-sm text-green-600">Request submitted successfully.</p>}
-                <Button type="submit">Submit request</Button>
+                <Button type="submit" disabled={!isOnline}>Submit request</Button>
               </form>
             </CardContent>
           </Card>
@@ -166,7 +168,6 @@ export default function MaintenancePage() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
+    </PortalShell>
   );
 }

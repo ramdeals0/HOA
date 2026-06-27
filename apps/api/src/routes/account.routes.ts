@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { updateDirectorySettingsSchema } from '@hoa/shared';
 import { prisma } from '../lib/prisma';
 import { asyncHandler } from '../lib/types';
 import { requireAuth, requireTenantMembership } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
+import { directoryService } from '../services/directory.service';
 
 const router = Router({ mergeParams: true });
 
@@ -40,15 +42,52 @@ router.get(
       }),
       prisma.tenantUser.findUnique({
         where: { tenantId_userId: { tenantId, userId } },
-        select: { role: true, status: true },
+        select: {
+          role: true,
+          status: true,
+          showInDirectory: true,
+          directoryShareEmail: true,
+          directorySharePhone: true,
+          directoryShareAddress: true,
+          directorySharePhoto: true,
+        },
       }),
     ]);
 
     res.json({
       user,
       properties,
-      membership: tenantUser,
+      membership: tenantUser
+        ? {
+            role: tenantUser.role,
+            status: tenantUser.status,
+          }
+        : null,
+      directorySettings: tenantUser
+        ? {
+            showInDirectory: tenantUser.showInDirectory,
+            shareEmail: tenantUser.directoryShareEmail,
+            sharePhone: tenantUser.directorySharePhone,
+            shareAddress: tenantUser.directoryShareAddress,
+            sharePhoto: tenantUser.directorySharePhoto,
+          }
+        : null,
     });
+  }),
+);
+
+router.patch(
+  '/directory-settings',
+  requireAuth,
+  requireTenantMembership,
+  asyncHandler(async (req, res) => {
+    const data = updateDirectorySettingsSchema.parse(req.body);
+    const directorySettings = await directoryService.updateDirectorySettings(
+      req.tenant!.tenantId,
+      req.auth!.userId,
+      data,
+    );
+    res.json({ directorySettings });
   }),
 );
 

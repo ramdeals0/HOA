@@ -146,9 +146,29 @@ export class PaymentService {
     }
   }
 
-  async getMyPayments(tenantId: string, userId: string) {
+  async getMyPayments(
+    tenantId: string,
+    userId: string,
+    filters?: { from?: Date; to?: Date },
+  ) {
+    const where: {
+      tenantId: string;
+      userId: string;
+      createdAt?: { gte?: Date; lte?: Date };
+    } = { tenantId, userId };
+
+    if (filters?.from || filters?.to) {
+      where.createdAt = {};
+      if (filters.from) {
+        where.createdAt.gte = filters.from;
+      }
+      if (filters.to) {
+        where.createdAt.lte = filters.to;
+      }
+    }
+
     return prisma.payment.findMany({
-      where: { tenantId, userId },
+      where,
       orderBy: { createdAt: 'desc' },
       include: { invoice: true },
     });

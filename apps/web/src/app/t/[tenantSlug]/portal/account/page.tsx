@@ -110,6 +110,20 @@ export default function AccountPage() {
 
         {user && (
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <Card className="lg:col-span-2">
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 py-6">
+                <div>
+                  <p className="font-medium text-gray-900">Neighbor directory privacy</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Choose what other members can see about you in the resident directory.
+                  </p>
+                </div>
+                <Link href={`/t/${slug}/portal/settings`}>
+                  <Button variant="outline">Manage directory settings</Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Profile</CardTitle>

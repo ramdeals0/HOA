@@ -14,7 +14,7 @@ export default function AdminInvoicesPage() {
   const params = useParams();
   const slug = params.tenantSlug as string;
   const qc = useQueryClient();
-  const [monthlyDues, setMonthlyDues] = useState('150');
+  const [monthlyDues, setMonthlyDues] = useState('50');
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -37,17 +37,19 @@ export default function AdminInvoicesPage() {
     });
   }
 
-  async function generateInvoices() {
-    const now = new Date();
-    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const dueDate = new Date(now.getFullYear(), now.getMonth(), 15);
+  async function generateAnnualInvoices() {
+    const year = new Date().getFullYear();
+    const periodStart = new Date(year, 0, 1);
+    const periodEnd = new Date(year, 11, 31, 23, 59, 59);
+    const dueDate = new Date(year, 0, 1);
     await tenantApi(slug, '/invoices/generate', {
       method: 'POST',
       body: JSON.stringify({
         periodStart: periodStart.toISOString(),
         periodEnd: periodEnd.toISOString(),
         dueDate: dueDate.toISOString(),
+        description: `Annual HOA Dues ${year}`,
+        amountCents: 5000,
       }),
     });
     qc.invalidateQueries({ queryKey: ['admin-invoices', slug] });
@@ -72,9 +74,9 @@ export default function AdminInvoicesPage() {
         <Card className="mt-6">
           <CardHeader><CardTitle>Configure Dues</CardTitle></CardHeader>
           <CardContent className="flex gap-4">
-            <Input type="number" placeholder="Monthly dues ($)" value={monthlyDues} onChange={(e) => setMonthlyDues(e.target.value)} className="max-w-xs" />
+            <Input type="number" placeholder="Annual dues ($)" value={monthlyDues} onChange={(e) => setMonthlyDues(e.target.value)} className="max-w-xs" />
             <Button onClick={saveDues}>Save</Button>
-            <Button variant="outline" onClick={generateInvoices}>Generate Invoices for All Members</Button>
+            <Button variant="outline" onClick={generateAnnualInvoices}>Generate $50 Annual Invoices (Jan 1)</Button>
           </CardContent>
         </Card>
 

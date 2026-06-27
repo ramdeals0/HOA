@@ -22,7 +22,7 @@ async function createTenantWithData(params: {
       settings: {
         create: {
           monthlyDuesCents: params.monthlyDuesCents,
-          annualDuesCents: params.monthlyDuesCents * 12,
+          annualDuesCents: params.monthlyDuesCents,
         },
       },
     },
@@ -93,7 +93,7 @@ async function main() {
     slug: 'whisper-groves',
     plan: 'PRO',
     primaryColor: '#2563eb',
-    monthlyDuesCents: 15000,
+    monthlyDuesCents: 5000,
   });
 
   const superAdmin = await createUser('superadmin@whispergroves.example.com', password, 'Sam', 'Admin');
@@ -129,6 +129,57 @@ async function main() {
 
     members.push({ member, property });
   }
+
+  await prisma.user.update({
+    where: { id: members[0].member.id },
+    data: {
+      phone: '(555) 555-0101',
+      photoUrl: 'https://i.pravatar.cc/150?u=member1',
+    },
+  });
+  await prisma.user.update({
+    where: { id: members[1].member.id },
+    data: { phone: '(555) 555-0102' },
+  });
+
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: members[0].member.id },
+    },
+    data: {
+      showInDirectory: true,
+      directoryShareEmail: true,
+      directorySharePhone: true,
+      directoryShareAddress: true,
+      directorySharePhoto: true,
+    },
+  });
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: members[1].member.id },
+    },
+    data: {
+      showInDirectory: true,
+      directorySharePhone: true,
+      directoryShareAddress: true,
+    },
+  });
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: members[2].member.id },
+    },
+    data: { showInDirectory: true },
+  });
+  await prisma.tenantUser.update({
+    where: {
+      tenantId_userId: { tenantId: whisperGroves.id, userId: board1.id },
+    },
+    data: {
+      showInDirectory: true,
+      directoryShareEmail: true,
+      directoryShareAddress: true,
+    },
+  });
 
   // Sample news
   await prisma.newsPost.createMany({
@@ -188,35 +239,47 @@ async function main() {
     },
   });
 
-  // Invoices and payments
+  // Annual $50 dues on January 1 for the last 3 years (all active members)
   const now = new Date();
-  const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const dueDate = new Date(now.getFullYear(), now.getMonth(), 15);
+  const annualDuesCents = 5000;
+  const currentYear = now.getFullYear();
+  const annualYears = [currentYear - 2, currentYear - 1, currentYear];
+  const allDuesUserIds = [
+    ...members.map(({ member }) => member.id),
+    board1.id,
+    board2.id,
+    dualBoardMember.id,
+  ];
 
-  for (let i = 0; i < members.length; i++) {
-    const status = i < 3 ? 'PAID' : i < 6 ? 'OPEN' : 'OVERDUE';
-    const invoice = await prisma.invoice.create({
-      data: {
-        tenantId: whisperGroves.id,
-        userId: members[i].member.id,
-        amountCents: 15000,
-        description: `HOA Dues ${periodStart.toLocaleDateString()} - ${periodEnd.toLocaleDateString()}`,
-        periodStart,
-        periodEnd,
-        dueDate,
-        status,
-      },
-    });
+  for (const year of annualYears) {
+    const periodStart = new Date(year, 0, 1);
+    const periodEnd = new Date(year, 11, 31, 23, 59, 59);
+    const dueDate = new Date(year, 0, 1);
+    const paidAt = new Date(year, 0, 1, 12, 0, 0);
 
-    if (status === 'PAID') {
+    for (const userId of allDuesUserIds) {
+      const invoice = await prisma.invoice.create({
+        data: {
+          tenantId: whisperGroves.id,
+          userId,
+          amountCents: annualDuesCents,
+          description: `Annual HOA Dues ${year}`,
+          periodStart,
+          periodEnd,
+          dueDate,
+          status: 'PAID',
+          createdAt: periodStart,
+        },
+      });
+
       await prisma.payment.create({
         data: {
           tenantId: whisperGroves.id,
           invoiceId: invoice.id,
-          userId: members[i].member.id,
-          amountCents: 15000,
+          userId,
+          amountCents: annualDuesCents,
           status: 'SUCCEEDED',
+          createdAt: paidAt,
         },
       });
     }
@@ -300,6 +363,22 @@ async function main() {
         location: 'Community Clubhouse',
         description: 'Wrap-up of the year and preview of upcoming projects.',
         meetingType: 'ANNUAL',
+      },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Summer Community BBQ',
+        scheduledAt: new Date(year, 6, 12, 17, 0),
+        location: 'Pool Pavilion',
+        description: 'Annual cookout with neighbors. Bring a side dish to share.',
+        meetingType: 'SOCIAL',
+      },
+      {
+        tenantId: whisperGroves.id,
+        title: 'Neighborhood Garage Sale',
+        scheduledAt: new Date(year, 5, 7, 8, 0),
+        location: 'Throughout Whisper Groves',
+        description: 'Community-wide garage sale day. Map available in the portal.',
+        meetingType: 'SOCIAL',
       },
     ],
   });
