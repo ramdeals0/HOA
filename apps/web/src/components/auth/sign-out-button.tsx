@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,6 @@ export function SignOutButton({
   className?: string;
   variant?: 'default' | 'outline' | 'ghost' | 'destructive';
 }) {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   async function handleSignOut() {
@@ -22,8 +20,7 @@ export function SignOutButton({
       // Still redirect even if logout request fails
     }
     queryClient.clear();
-    router.push('/login');
-    router.refresh();
+    window.location.assign('/login');
   }
 
   return (
