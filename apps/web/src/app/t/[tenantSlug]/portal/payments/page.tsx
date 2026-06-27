@@ -3,11 +3,14 @@
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { PortalNav } from '@/components/layout/header';
+import { PortalShell } from '@/components/layout/portal-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { OfflineNotice } from '@/components/pwa/offline-notice';
+import { useOfflineAction } from '@/components/pwa/offline-action-provider';
+import { useOnlineStatus } from '@/hooks/use-online-status';
 import { api, tenantApi, formatCurrency, formatDate } from '@/lib/api';
 
 type PaymentRecord = {
@@ -33,6 +36,8 @@ function defaultFromDate() {
 export default function PaymentsPage() {
   const params = useParams();
   const slug = params.tenantSlug as string;
+  const isOnline = useOnlineStatus();
+  const { guardAction } = useOfflineAction();
 
   const [fromDate, setFromDate] = useState(defaultFromDate);
   const [toDate, setToDate] = useState(() => formatInputDate(new Date()));
@@ -89,14 +94,11 @@ export default function PaymentsPage() {
   const rangeInvalid = Boolean(fromDate && toDate && fromDate > toDate);
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 border-r bg-white p-4">
-        <PortalNav slug={slug} role={me?.currentTenant?.role} />
-      </aside>
-      <main className="flex-1 p-8">
-        <h1 className="text-2xl font-bold">Statements & Payments</h1>
+    <PortalShell slug={slug} role={me?.currentTenant?.role}>
+      <h1 className="text-2xl font-bold sm:text-3xl">Statements & Payments</h1>
+      <OfflineNotice visible={!isOnline && Boolean(data?.payments?.length || data?.invoices?.length)} />
 
-        <Card className="mt-6">
+      <Card className="mt-6">
           <CardHeader><CardTitle>Invoices</CardTitle></CardHeader>
           <CardContent>
             <table className="w-full text-sm">
@@ -118,7 +120,13 @@ export default function PaymentsPage() {
                     <td><Badge variant={inv.status === 'PAID' ? 'success' : 'warning'}>{inv.status}</Badge></td>
                     <td>
                       {(inv.status === 'OPEN' || inv.status === 'OVERDUE') && (
-                        <Button size="sm" onClick={() => payNow(inv.id)}>Pay</Button>
+                        <Button
+                          size="sm"
+                          disabled={!isOnline}
+                          onClick={() => guardAction(() => payNow(inv.id))}
+                        >
+                          Pay
+                        </Button>
                       )}
                     </td>
                   </tr>
@@ -208,7 +216,6 @@ export default function PaymentsPage() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
+    </PortalShell>
   );
 }

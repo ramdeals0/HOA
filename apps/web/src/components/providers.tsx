@@ -1,7 +1,10 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { OfflineActionProvider } from '@/components/pwa/offline-action-provider';
+import { OfflineBanner } from '@/components/pwa/offline-banner';
+import { ServiceWorkerRegister } from '@/components/pwa/service-worker-register';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -11,5 +14,13 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <OfflineActionProvider>
+        <ServiceWorkerRegister />
+        <OfflineBanner />
+        {children}
+      </OfflineActionProvider>
+    </QueryClientProvider>
+  );
 }

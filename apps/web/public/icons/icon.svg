@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Neighborhood+1">
+  <rect width="512" height="512" rx="96" fill="#2563eb"/>
+  <path fill="#ffffff" d="M256 112 128 232v168h96v-96h64v96h96V232L256 112Z"/>
+  <circle cx="368" cy="160" r="44" fill="#93c5fd"/>
+  <text x="368" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#1d4ed8">+1</text>
+</svg>
