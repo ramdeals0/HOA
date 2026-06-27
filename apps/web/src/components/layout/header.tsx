@@ -115,6 +115,9 @@ export function PortalNav({
           <Link href={`/t/${slug}/admin/invoices`} className={linkClassName} onClick={onNavigate}>
             Dues & Invoices
           </Link>
+          <Link href={`/t/${slug}/admin/reports`} className={linkClassName} onClick={onNavigate}>
+            Reports
+          </Link>
           <Link href={`/t/${slug}/admin/meetings`} className={linkClassName} onClick={onNavigate}>
             Events Calendar
           </Link>

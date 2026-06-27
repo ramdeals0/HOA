@@ -50,3 +50,32 @@ export function formatDate(date: string | Date) {
     day: 'numeric',
   });
 }
+
+export async function downloadTenantCsv(
+  tenantSlug: string,
+  path: string,
+  filename: string,
+): Promise<void> {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+  const res = await fetch(`${API_URL}/api/t/${tenantSlug}${path}`, {
+    credentials: 'include',
+    headers: {
+      'x-tenant-slug': tenantSlug,
+    },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, data.error ?? 'Download failed');
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
