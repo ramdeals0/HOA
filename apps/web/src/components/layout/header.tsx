@@ -9,6 +9,9 @@ export function SiteHeader() {
           HOA Portal SaaS
         </Link>
         <nav className="flex items-center gap-4 text-sm">
+          <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
+            Privacy
+          </Link>
           <Link href="/signup" className="text-gray-600 hover:text-gray-900">
             Start your HOA
           </Link>

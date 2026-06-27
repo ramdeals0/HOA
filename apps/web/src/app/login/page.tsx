@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { SiteFooter } from '@/components/layout/site-footer';
 import { api } from '@/lib/api';
 
 const VILLA_IMAGE =
@@ -70,7 +71,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col">
+      <div className="flex flex-1">
       {/* Hero image panel */}
       <div className="relative hidden w-1/2 lg:block">
         <Image
@@ -100,6 +102,9 @@ export default function LoginPage() {
         <div className="flex items-center justify-between px-6 py-5 lg:px-12">
           <Link href="/" className="text-lg font-bold text-blue-600">
             HOA Portal SaaS
+          </Link>
+          <Link href="/privacy" className="text-sm text-gray-600 hover:text-gray-900">
+            Privacy
           </Link>
           <Link href="/signup" className="text-sm text-gray-600 hover:text-gray-900">
             Start your HOA
@@ -194,6 +199,8 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      </div>
+      <SiteFooter />
     </div>
   );
 }
