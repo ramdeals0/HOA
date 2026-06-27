@@ -6,6 +6,17 @@ export class ApiError extends Error {
   }
 }
 
+function redirectToLogin() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const redirect = `${window.location.pathname}${window.location.search}`;
+  const loginUrl = new URL('/login', window.location.origin);
+  loginUrl.searchParams.set('redirect', redirect);
+  window.location.assign(loginUrl.toString());
+}
+
 export async function api<T>(
   path: string,
   options: RequestInit & { tenantSlug?: string } = {},
@@ -29,6 +40,9 @@ export async function api<T>(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    if (res.status === 401 && path !== '/api/auth/login' && path !== '/api/auth/logout') {
+      redirectToLogin();
+    }
     throw new ApiError(res.status, data.error ?? 'Request failed');
   }
 

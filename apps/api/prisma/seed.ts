@@ -1,5 +1,6 @@
 import { PrismaClient, Role } from '@prisma/client';
 import { hashPassword } from '../src/lib/password';
+import { getWhisperGrovesDemoDocuments } from '../src/lib/demo-documents';
 
 const prisma = new PrismaClient();
 
@@ -289,33 +290,13 @@ async function main() {
   }
 
   // Documents
+  const webBaseUrl = process.env.WEB_URL ?? 'http://localhost:3000';
   await prisma.document.createMany({
-    data: [
-      {
-        tenantId: whisperGroves.id,
-        uploadedById: board1.id,
-        title: 'Community Bylaws Summary',
-        description: 'Overview of HOA bylaws and rules',
-        fileUrl: 'https://example.com/docs/bylaws.pdf',
-        visibility: 'PUBLIC',
-      },
-      {
-        tenantId: whisperGroves.id,
-        uploadedById: board1.id,
-        title: 'Welcome Packet',
-        description: 'New homeowner welcome information',
-        fileUrl: 'https://example.com/docs/welcome.pdf',
-        visibility: 'PUBLIC',
-      },
-      {
-        tenantId: whisperGroves.id,
-        uploadedById: board1.id,
-        title: 'Financial Report Q1',
-        description: 'Quarterly financial summary',
-        fileUrl: 'https://example.com/docs/financial-q1.pdf',
-        visibility: 'FINANCIAL',
-      },
-    ],
+    data: getWhisperGrovesDemoDocuments(webBaseUrl).map((document) => ({
+      tenantId: whisperGroves.id,
+      uploadedById: board1.id,
+      ...document,
+    })),
   });
 
   // Pending application

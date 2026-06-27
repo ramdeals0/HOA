@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Menu, X } from 'lucide-react';
 import { PortalNav } from '@/components/layout/header';
+import { PortalSessionInfo } from '@/components/auth/portal-session-info';
 import { Button } from '@/components/ui/button';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 
@@ -21,10 +22,7 @@ export function PortalShell({
   return (
     <div className={`flex min-h-screen flex-col md:flex-row ${isOnline ? '' : 'pt-10'}`}>
       <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-white px-4 py-3 md:hidden">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Member Portal</p>
-          <p className="text-sm font-semibold text-gray-900">Neighborhood+1</p>
-        </div>
+        <PortalSessionInfo compact />
         <Button
           type="button"
           variant="outline"

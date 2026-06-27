@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SiteHeader } from '@/components/layout/header';
+import { SiteFooter } from '@/components/layout/site-footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -51,9 +52,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-gray-50">
       <SiteHeader />
-      <div className="mx-auto max-w-lg px-4 py-16">
+      <div className="mx-auto max-w-lg flex-1 px-4 py-16">
         <Card>
           <CardHeader>
             <CardTitle>Start your HOA</CardTitle>
@@ -80,6 +81,7 @@ export default function SignupPage() {
           </CardContent>
         </Card>
       </div>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { PortalSessionInfo } from '@/components/auth/portal-session-info';
 
 export function SiteHeader() {
   return (
@@ -9,6 +10,9 @@ export function SiteHeader() {
           HOA Portal SaaS
         </Link>
         <nav className="flex items-center gap-4 text-sm">
+          <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
+            Privacy
+          </Link>
           <Link href="/signup" className="text-gray-600 hover:text-gray-900">
             Start your HOA
           </Link>
@@ -65,6 +69,7 @@ export function PortalNav({
 
   return (
     <nav className="flex min-h-[calc(100vh-2rem)] flex-col gap-1 text-sm">
+      <PortalSessionInfo />
       <div className="flex flex-1 flex-col gap-1">
       <Link href={`/t/${slug}/portal`} className={linkClassName} onClick={onNavigate}>
         Dashboard

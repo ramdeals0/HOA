@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { TenantProvider, TenantInfo } from '@/contexts/tenant-context';
 import { TenantHeader } from '@/components/layout/header';
+import { SiteFooter } from '@/components/layout/site-footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/api';
+import { HOA_MANAGEMENT_EMAIL, HOA_MANAGEMENT_NAME } from '@/lib/site-info';
 
 async function getTenant(slug: string): Promise<TenantInfo | null> {
   try {
@@ -79,7 +81,14 @@ export default async function TenantHomePage({ params }: { params: { tenantSlug:
           <section className="border-t bg-white py-12">
             <div className="mx-auto max-w-4xl px-4 text-center">
               <h3 className="font-semibold">Contact</h3>
-              <p className="mt-2 text-gray-600">{tenant.primaryContactEmail}</p>
+              <p className="mt-2 font-medium text-gray-900">{HOA_MANAGEMENT_NAME}</p>
+              <a
+                href={`mailto:${HOA_MANAGEMENT_EMAIL}`}
+                className="mt-1 inline-block text-blue-600 hover:underline"
+              >
+                {HOA_MANAGEMENT_EMAIL}
+              </a>
+              <p className="mt-4 text-sm text-gray-500">Community: {tenant.primaryContactEmail}</p>
               {tenant.address && (
                 <p className="text-gray-500">
                   {tenant.address}
@@ -89,6 +98,7 @@ export default async function TenantHomePage({ params }: { params: { tenantSlug:
             </div>
           </section>
         </main>
+        <SiteFooter />
       </div>
     </TenantProvider>
   );
