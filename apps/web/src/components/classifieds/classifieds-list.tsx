@@ -1,21 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { tenantApi, formatCurrency } from '@/lib/api';
+import { api, tenantApi, formatCurrency } from '@/lib/api';
+import { CONTENT_RETENTION_NOTICE, formatContentExpiryLabel } from '@/lib/content-retention';
 
 export type ClassifiedListing = {
   id: string;
+  authorId: string;
   title: string;
   description: string;
   category: string;
   priceCents: number | null;
   contactEmail: string | null;
+  status?: string;
+  createdAt: string;
   author: { firstName: string; lastName: string };
 };
 
@@ -23,14 +27,28 @@ export function ClassifiedsList({
   slug,
   limit,
   postHref,
+  showRetentionNotice = true,
+  enableManageActions = false,
+  editHrefPrefix,
 }: {
   slug: string;
   limit?: number;
   postHref?: string;
+  showRetentionNotice?: boolean;
+  enableManageActions?: boolean;
+  editHrefPrefix?: string;
 }) {
+  const qc = useQueryClient();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [selected, setSelected] = useState<ClassifiedListing | null>(null);
+  const [actionError, setActionError] = useState('');
+
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => api<{ user: { id: string }; currentTenant: { role: string } | null }>('/api/auth/me'),
+    enabled: enableManageActions,
+  });
 
   const { data, isLoading, error, isError } = useQuery({
     queryKey: ['classifieds', slug, search, category],
@@ -45,9 +63,37 @@ export function ClassifiedsList({
   const listings = limit ? (data?.listings ?? []).slice(0, limit) : (data?.listings ?? []);
   const categories = [...new Set((data?.listings ?? []).map((l) => l.category))];
   const showFilters = limit == null;
+  const isBoard = ['SUPER_ADMIN', 'BOARD'].includes(me?.currentTenant?.role ?? '');
+
+  function canManage(listing: ClassifiedListing) {
+    if (!enableManageActions || !me?.user.id) {
+      return false;
+    }
+    return listing.authorId === me.user.id || isBoard;
+  }
+
+  async function removeListing(listing: ClassifiedListing) {
+    if (!window.confirm('Remove this classified listing?')) {
+      return;
+    }
+
+    setActionError('');
+    try {
+      await tenantApi(slug, `/classifieds/${listing.id}`, { method: 'DELETE' });
+      setSelected(null);
+      await qc.invalidateQueries({ queryKey: ['classifieds', slug] });
+      await qc.invalidateQueries({ queryKey: ['my-classifieds', slug] });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Unable to remove listing.');
+    }
+  }
 
   return (
     <>
+      {showRetentionNotice && showFilters && (
+        <p className="mb-4 text-sm text-gray-500">{CONTENT_RETENTION_NOTICE}</p>
+      )}
+
       {showFilters && (
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -105,7 +151,10 @@ export function ClassifiedsList({
           <Card
             key={listing.id}
             className="cursor-pointer hover:shadow-md"
-            onClick={() => setSelected(listing)}
+            onClick={() => {
+              setActionError('');
+              setSelected(listing);
+            }}
           >
             <CardHeader>
               <div className="flex items-start justify-between gap-3">
@@ -120,6 +169,7 @@ export function ClassifiedsList({
               {listing.priceCents != null && (
                 <p className="mt-2 font-semibold">{formatCurrency(listing.priceCents)}</p>
               )}
+              <p className="mt-2 text-xs text-gray-500">{formatContentExpiryLabel(listing.createdAt)}</p>
             </CardContent>
           </Card>
         ))}
@@ -146,6 +196,23 @@ export function ClassifiedsList({
             <p className="mt-2 text-sm text-gray-500">
               Posted by {selected.author.firstName} {selected.author.lastName}
             </p>
+            <p className="mt-1 text-xs text-gray-500">{formatContentExpiryLabel(selected.createdAt)}</p>
+
+            {canManage(selected) && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {editHrefPrefix && (
+                  <Link href={`${editHrefPrefix}/${selected.id}/edit`}>
+                    <Button size="sm" variant="outline">
+                      Edit
+                    </Button>
+                  </Link>
+                )}
+                <Button size="sm" variant="destructive" onClick={() => removeListing(selected)}>
+                  Remove
+                </Button>
+              </div>
+            )}
+            {actionError && <p className="mt-3 text-sm text-red-600">{actionError}</p>}
           </div>
         </div>
       )}

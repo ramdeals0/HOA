@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OfflineNotice } from '@/components/pwa/offline-notice';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { api, formatDate } from '@/lib/api';
+import { formatContentExpiryLabel } from '@/lib/content-retention';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -46,7 +47,9 @@ export default function NewsDetailPage() {
         <Card className="mt-4">
           <CardHeader>
             <CardTitle className="text-xl sm:text-2xl">{post.title}</CardTitle>
-            <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+            <p className="text-sm text-gray-500">
+              {formatDate(post.createdAt)} · {formatContentExpiryLabel(post.createdAt)}
+            </p>
           </CardHeader>
           <CardContent>
             <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: post.body }} />

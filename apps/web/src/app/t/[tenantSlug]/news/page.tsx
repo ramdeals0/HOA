@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { OfflineNotice } from '@/components/pwa/offline-notice';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { api, formatDate } from '@/lib/api';
+import { formatContentExpiryLabel } from '@/lib/content-retention';
 
 export default function NewsListPage() {
   const params = useParams();
@@ -29,7 +30,7 @@ export default function NewsListPage() {
     <TenantPublicShell
       slug={slug}
       title="Community News"
-      description="Updates and announcements from your homeowners association."
+      description="Updates and announcements from your homeowners association. Posts are automatically removed after 30 days."
     >
       <OfflineNotice visible={!isOnline && posts.length > 0} />
 
@@ -55,7 +56,9 @@ export default function NewsListPage() {
                   {post.title}
                 </Link>
               </CardTitle>
-              <p className="text-sm text-gray-500">{formatDate(post.createdAt)}</p>
+              <p className="text-sm text-gray-500">
+                {formatDate(post.createdAt)} · {formatContentExpiryLabel(post.createdAt)}
+              </p>
             </CardHeader>
             <CardContent>
               <div className="line-clamp-3 text-gray-600" dangerouslySetInnerHTML={{ __html: post.body }} />

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { createNewsSchema, updateNewsSchema } from '@hoa/shared';
 import { prisma } from '../lib/prisma';
+import { contentCreatedWithinRetention } from '../lib/content-retention';
 import { asyncHandler, AppError, param } from '../lib/types';
 import { optionalAuth, requireAuth, requireTenantMembership, requireTenantRole } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
@@ -20,6 +21,7 @@ router.get(
     const posts = await prisma.newsPost.findMany({
       where: {
         tenantId,
+        ...contentCreatedWithinRetention(),
         ...(isStaff ? {} : { isPublic: true, isPublished: true }),
       },
       orderBy: { createdAt: 'desc' },
@@ -35,7 +37,11 @@ router.get(
   optionalAuth,
   asyncHandler(async (req, res) => {
     const post = await prisma.newsPost.findFirst({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        ...contentCreatedWithinRetention(),
+      },
       include: { author: { select: { firstName: true, lastName: true } } },
     });
 
@@ -78,7 +84,11 @@ router.patch(
   asyncHandler(async (req, res) => {
     const data = updateNewsSchema.parse(req.body);
     const post = await prisma.newsPost.updateMany({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        ...contentCreatedWithinRetention(),
+      },
       data,
     });
     if (post.count === 0) throw new AppError(404, 'Post not found');
@@ -94,7 +104,11 @@ router.delete(
   requireTenantRole(['SUPER_ADMIN', 'BOARD']),
   asyncHandler(async (req, res) => {
     const result = await prisma.newsPost.deleteMany({
-      where: { id: param(req.params.id), tenantId: req.tenant!.tenantId },
+      where: {
+        id: param(req.params.id),
+        tenantId: req.tenant!.tenantId,
+        ...contentCreatedWithinRetention(),
+      },
     });
     if (result.count === 0) throw new AppError(404, 'Post not found');
     res.json({ success: true });

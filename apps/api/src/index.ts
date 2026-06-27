@@ -1,11 +1,14 @@
 import { createApp } from './app';
 import { prisma } from './lib/prisma';
 import { ensureWhisperGrovesDemoDocuments } from './lib/demo-documents';
+import { purgeExpiredContent } from './lib/content-retention';
 
 const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 const app = createApp();
 
 async function start() {
+  await purgeExpiredContent(prisma);
+
   if (process.env.ENSURE_DEMO_DOCUMENTS !== 'false') {
     await ensureWhisperGrovesDemoDocuments(prisma);
   }
