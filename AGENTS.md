@@ -25,7 +25,7 @@ Dependencies are refreshed automatically by the startup update script (`pnpm ins
 - Required files (already created in this VM; recreate from `.env.example` if missing):
   - `apps/api/.env` — copy of root `.env` (provides `DATABASE_URL`, `JWT_SECRET`, etc.).
   - `apps/web/.env.local` — must set `NEXT_PUBLIC_API_URL="http://localhost:4000"`.
-- For local dev, set `CORS_ORIGIN`/`WEB_URL` to `http://localhost:3000`, `API_URL` to `http://localhost:4000`, and `COOKIE_CROSS_ORIGIN="false"`.
+- For local dev, set `CORS_ORIGIN`/`WEB_URL` to `http://localhost:3000`, `API_URL` to `http://localhost:4000`, and leave `COOKIE_CROSS_ORIGIN` unset/`false`. The web app proxies `/api/*` to the API so session cookies stay on `localhost:3000`.
 
 ### Run / test / lint
 

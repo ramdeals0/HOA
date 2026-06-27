@@ -1,4 +1,15 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+function getApiBaseUrl() {
+  // Browser requests go through the Next.js /api rewrite so auth cookies stay same-origin.
+  if (typeof window !== 'undefined') {
+    return '';
+  }
+
+  return (
+    process.env.API_INTERNAL_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
+    'http://localhost:4000'
+  );
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -31,7 +42,7 @@ export async function api<T>(
     headers['x-tenant-slug'] = tenantSlug;
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
     ...fetchOptions,
     credentials: 'include',
     headers,
@@ -70,8 +81,7 @@ export async function downloadTenantCsv(
   path: string,
   filename: string,
 ): Promise<void> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-  const res = await fetch(`${API_URL}/api/t/${tenantSlug}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}/api/t/${tenantSlug}${path}`, {
     credentials: 'include',
     headers: {
       'x-tenant-slug': tenantSlug,
