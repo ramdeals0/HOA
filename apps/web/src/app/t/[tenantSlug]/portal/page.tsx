@@ -55,6 +55,20 @@ export default function PortalDashboard() {
       }>(slug, `/meetings?year=${year}`),
   });
 
+  const { data: classifieds } = useQuery({
+    queryKey: ['classifieds', slug, '', ''],
+    queryFn: () =>
+      tenantApi<{
+        listings: Array<{
+          id: string;
+          title: string;
+          description: string;
+          category: string;
+          priceCents: number | null;
+        }>;
+      }>(slug, '/classifieds'),
+  });
+
   const unpaid = invoices?.invoices.filter((i) => i.status === 'OPEN' || i.status === 'OVERDUE') ?? [];
   const nextDue = unpaid.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
   const upcomingMeetings = (meetings?.meetings ?? []).filter(
@@ -201,6 +215,54 @@ export default function PortalDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Latest Classifieds</CardTitle>
+              <CardDescription>Community buy, sell, and trade listings</CardDescription>
+            </div>
+            <Link href={`/t/${slug}/portal/classifieds`} className="text-sm text-blue-600 hover:underline">
+              View all
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {(classifieds?.listings ?? []).length === 0 ? (
+            <div className="text-sm text-gray-500">
+              <p>No classified listings yet.</p>
+              <Link href={`/t/${slug}/portal/classifieds/new`} className="mt-2 inline-block text-blue-600 hover:underline">
+                Post a classified
+              </Link>
+            </div>
+          ) : (
+            <ul className="space-y-4">
+              {(classifieds?.listings ?? []).slice(0, 3).map((listing) => (
+                <li key={listing.id} className="border-b pb-4 last:border-0 last:pb-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <Link
+                      href={`/t/${slug}/portal/classifieds`}
+                      className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                    >
+                      {listing.title}
+                    </Link>
+                    <Badge variant="outline" className="shrink-0 text-[10px]">
+                      {listing.category}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm text-gray-600">{listing.description}</p>
+                  {listing.priceCents != null && (
+                    <p className="mt-1 text-sm font-semibold text-gray-800">
+                      {formatCurrency(listing.priceCents)}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       {nextDue && (
         <div className="fixed inset-x-4 bottom-4 z-30 sm:hidden">
