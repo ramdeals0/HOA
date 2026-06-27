@@ -12,3 +12,4 @@ export * from './schemas/invoice';
 export * from './schemas/meeting';
 export * from './schemas/directory';
 export * from './schemas/report';
+export * from './schemas/resolution';

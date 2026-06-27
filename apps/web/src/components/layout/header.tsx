@@ -93,6 +93,9 @@ export function PortalNav({
       <Link href={`/t/${slug}/portal/documents`} className={linkClassName} onClick={onNavigate}>
         Documents
       </Link>
+      <Link href={`/t/${slug}/portal/voting`} className={linkClassName} onClick={onNavigate}>
+        Community Voting
+      </Link>
       <Link href={`/t/${slug}/portal/classifieds`} className={linkClassName} onClick={onNavigate}>
         Classifieds
       </Link>
@@ -120,6 +123,9 @@ export function PortalNav({
           </Link>
           <Link href={`/t/${slug}/admin/reports`} className={linkClassName} onClick={onNavigate}>
             Reports
+          </Link>
+          <Link href={`/t/${slug}/admin/voting`} className={linkClassName} onClick={onNavigate}>
+            Resolutions & Polls
           </Link>
           <Link href={`/t/${slug}/admin/meetings`} className={linkClassName} onClick={onNavigate}>
             Events Calendar

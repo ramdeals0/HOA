@@ -69,6 +69,21 @@ export default function PortalDashboard() {
       }>(slug, '/classifieds'),
   });
 
+  const { data: resolutions } = useQuery({
+    queryKey: ['resolutions', slug],
+    queryFn: () =>
+      tenantApi<{
+        resolutions: Array<{
+          id: string;
+          title: string;
+          type: string;
+          status: string;
+          voteCount: number;
+          votingOpen: boolean;
+        }>;
+      }>(slug, '/resolutions'),
+  });
+
   const unpaid = invoices?.invoices.filter((i) => i.status === 'OPEN' || i.status === 'OVERDUE') ?? [];
   const nextDue = unpaid.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
   const upcomingMeetings = (meetings?.meetings ?? []).filter(
@@ -259,6 +274,45 @@ export default function PortalDashboard() {
                   )}
                 </li>
               ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Open Voting</CardTitle>
+              <CardDescription>Board resolutions and community polls needing your vote</CardDescription>
+            </div>
+            <Link href={`/t/${slug}/portal/voting`} className="text-sm text-blue-600 hover:underline">
+              View all
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {(resolutions?.resolutions ?? []).filter((item) => item.status === 'OPEN').length === 0 ? (
+            <p className="text-sm text-gray-500">No open votes right now.</p>
+          ) : (
+            <ul className="space-y-4">
+              {(resolutions?.resolutions ?? [])
+                .filter((item) => item.status === 'OPEN')
+                .slice(0, 3)
+                .map((item) => (
+                  <li key={item.id} className="border-b pb-4 last:border-0 last:pb-0">
+                    <Link
+                      href={`/t/${slug}/portal/voting`}
+                      className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                    >
+                      {item.title}
+                    </Link>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {item.type === 'RESOLUTION' ? 'Board resolution' : 'Community viewpoint'} ·{' '}
+                      {item.voteCount} vote{item.voteCount === 1 ? '' : 's'}
+                    </p>
+                  </li>
+                ))}
             </ul>
           )}
         </CardContent>
