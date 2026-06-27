@@ -20,6 +20,7 @@ import {
 } from '@hoa/shared';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { PortalSessionInfo } from '@/components/auth/portal-session-info';
+import { isPortalFeatureEnabled } from '@/lib/portal-nav';
 import { tenantApi } from '@/lib/api';
 
 type CoreNavItem = {
@@ -93,12 +94,9 @@ export function PortalNav({
   });
 
   const portalNav = data?.portalNav;
-  const enabledOptionalKeys = PORTAL_OPTIONAL_NAV_KEYS.filter((key) => {
-    if (isBoard || isStaff) {
-      return true;
-    }
-    return portalNav?.[key] === true;
-  });
+  const enabledOptionalKeys = PORTAL_OPTIONAL_NAV_KEYS.filter((key) =>
+    isPortalFeatureEnabled(key, role, portalNav),
+  );
 
   const boardLinkClassName = 'rounded px-3 py-3 text-sm hover:bg-gray-100 md:py-2';
 

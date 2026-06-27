@@ -12,6 +12,7 @@ import { useOfflineAction } from '@/components/pwa/offline-action-provider';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { api, tenantApi, formatCurrency, formatDate } from '@/lib/api';
 import { formatMeetingDateTime } from '@/lib/meetings';
+import { getEnabledPortalFeatures } from '@/lib/portal-nav';
 
 export default function PortalDashboard() {
   const params = useParams();
@@ -25,6 +26,14 @@ export default function PortalDashboard() {
     queryFn: () => api<{ currentTenant: { role: string } | null }>('/api/auth/me'),
   });
 
+  const { data: portalNavData } = useQuery({
+    queryKey: ['portal-nav', slug],
+    queryFn: () => tenantApi<{ portalNav: import('@hoa/shared').PortalOptionalNavConfig }>(slug, '/portal-nav'),
+  });
+
+  const role = me?.currentTenant?.role;
+  const features = getEnabledPortalFeatures(role, portalNavData?.portalNav);
+
   const { data: invoices } = useQuery({
     queryKey: ['my-invoices', slug],
     queryFn: () =>
@@ -35,12 +44,14 @@ export default function PortalDashboard() {
 
   const { data: news } = useQuery({
     queryKey: ['news', slug],
+    enabled: features.news,
     queryFn: () =>
       tenantApi<{ posts: Array<{ id: string; title: string; createdAt: string; body: string }> }>(slug, '/news'),
   });
 
   const { data: meetings } = useQuery({
     queryKey: ['meetings', slug, year],
+    enabled: features.events,
     queryFn: () =>
       tenantApi<{
         meetings: Array<{
@@ -57,6 +68,7 @@ export default function PortalDashboard() {
 
   const { data: classifieds } = useQuery({
     queryKey: ['classifieds', slug, '', ''],
+    enabled: features.classifieds,
     queryFn: () =>
       tenantApi<{
         listings: Array<{
@@ -71,6 +83,7 @@ export default function PortalDashboard() {
 
   const { data: resolutions } = useQuery({
     queryKey: ['resolutions', slug],
+    enabled: features.voting,
     queryFn: () =>
       tenantApi<{
         resolutions: Array<{
@@ -89,7 +102,6 @@ export default function PortalDashboard() {
   const upcomingMeetings = (meetings?.meetings ?? []).filter(
     (m) => new Date(m.scheduledAt) >= new Date(new Date().setHours(0, 0, 0, 0)),
   );
-  const role = me?.currentTenant?.role;
 
   async function payNow(invoiceId: string) {
     const session = await tenantApi<{ url: string }>(slug, '/payments/checkout-session', {
@@ -106,7 +118,7 @@ export default function PortalDashboard() {
         <p className="mt-1 text-sm text-gray-500">Welcome back to your community portal</p>
       </div>
 
-      <OfflineNotice visible={!isOnline && Boolean(news?.posts?.length)} />
+      <OfflineNotice visible={!isOnline && features.news && Boolean(news?.posts?.length)} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-white">
@@ -147,176 +159,189 @@ export default function PortalDashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <CardTitle>Yearly Meeting Schedule</CardTitle>
-                <CardDescription>{year} community meetings</CardDescription>
+        {features.events && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle>Yearly Meeting Schedule</CardTitle>
+                  <CardDescription>{year} community meetings</CardDescription>
+                </div>
+                <Link href={`/t/${slug}/portal/events`} className="text-sm text-blue-600 hover:underline">
+                  View calendar
+                </Link>
               </div>
-              <Link href={`/t/${slug}/portal/events`} className="text-sm text-blue-600 hover:underline">
-                View calendar
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {(meetings?.meetings ?? []).length === 0 ? (
-              <p className="text-sm text-gray-500">No meetings scheduled for {year} yet.</p>
-            ) : (
-              <ul className="space-y-4">
-                {meetings?.meetings.map((meeting) => {
-                  const isPast = new Date(meeting.scheduledAt) < new Date();
-                  return (
-                    <li
-                      key={meeting.id}
-                      className={`rounded-lg border p-3 ${isPast ? 'bg-gray-50 opacity-75' : 'border-amber-100 bg-amber-50/40'}`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium leading-snug">{meeting.title}</p>
-                        <Badge variant="outline" className="shrink-0 text-[10px]">
-                          {meeting.meetingType}
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-sm text-gray-600">{formatMeetingDateTime(meeting.scheduledAt)}</p>
-                      {meeting.location && (
-                        <p className="mt-1 text-xs text-gray-500">{meeting.location}</p>
-                      )}
-                      {isPast ? (
-                        <span className="mt-2 inline-block text-xs text-gray-400">Completed</span>
-                      ) : upcomingMeetings[0]?.id === meeting.id ? (
-                        <span className="mt-2 inline-block text-xs font-medium text-amber-700">Next up</span>
-                      ) : null}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              {(meetings?.meetings ?? []).length === 0 ? (
+                <p className="text-sm text-gray-500">No meetings scheduled for {year} yet.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {meetings?.meetings.map((meeting) => {
+                    const isPast = new Date(meeting.scheduledAt) < new Date();
+                    return (
+                      <li
+                        key={meeting.id}
+                        className={`rounded-lg border p-3 ${isPast ? 'bg-gray-50 opacity-75' : 'border-amber-100 bg-amber-50/40'}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-medium leading-snug">{meeting.title}</p>
+                          <Badge variant="outline" className="shrink-0 text-[10px]">
+                            {meeting.meetingType}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 text-sm text-gray-600">{formatMeetingDateTime(meeting.scheduledAt)}</p>
+                        {meeting.location && (
+                          <p className="mt-1 text-xs text-gray-500">{meeting.location}</p>
+                        )}
+                        {isPast ? (
+                          <span className="mt-2 inline-block text-xs text-gray-400">Completed</span>
+                        ) : upcomingMeetings[0]?.id === meeting.id ? (
+                          <span className="mt-2 inline-block text-xs font-medium text-amber-700">Next up</span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-        <Card>
+        {features.news && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <CardTitle>Latest News</CardTitle>
+                  <CardDescription>Recent community updates</CardDescription>
+                </div>
+                <Link href={`/t/${slug}/news`} className="text-sm text-blue-600 hover:underline">
+                  View all
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(news?.posts ?? []).length === 0 ? (
+                <p className="text-sm text-gray-500">No news posts yet.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {(news?.posts ?? []).slice(0, 3).map((post) => (
+                    <li key={post.id} className="border-b pb-4 last:border-0 last:pb-0">
+                      <Link
+                        href={`/t/${slug}/news/${post.id}`}
+                        className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                      >
+                        {post.title}
+                      </Link>
+                      <p className="mt-1 text-xs text-gray-400">{formatDate(post.createdAt)}</p>
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                        {post.body.replace(/<[^>]+>/g, ' ').trim()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {features.classifieds && (
+        <Card className="mt-6">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <CardTitle>Latest News</CardTitle>
-                <CardDescription>Recent community updates</CardDescription>
+                <CardTitle>Latest Classifieds</CardTitle>
+                <CardDescription>Community buy, sell, and trade listings</CardDescription>
               </div>
-              <Link href={`/t/${slug}/news`} className="text-sm text-blue-600 hover:underline">
+              <Link href={`/t/${slug}/portal/classifieds`} className="text-sm text-blue-600 hover:underline">
                 View all
               </Link>
             </div>
           </CardHeader>
           <CardContent>
-            {(news?.posts ?? []).length === 0 ? (
-              <p className="text-sm text-gray-500">No news posts yet.</p>
+            {(classifieds?.listings ?? []).length === 0 ? (
+              <div className="text-sm text-gray-500">
+                <p>No classified listings yet.</p>
+                {features.postClassified && (
+                  <Link
+                    href={`/t/${slug}/portal/classifieds/new`}
+                    className="mt-2 inline-block text-blue-600 hover:underline"
+                  >
+                    Post a classified
+                  </Link>
+                )}
+              </div>
             ) : (
               <ul className="space-y-4">
-                {(news?.posts ?? []).slice(0, 3).map((post) => (
-                  <li key={post.id} className="border-b pb-4 last:border-0 last:pb-0">
-                    <Link
-                      href={`/t/${slug}/news/${post.id}`}
-                      className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
-                    >
-                      {post.title}
-                    </Link>
-                    <p className="mt-1 text-xs text-gray-400">{formatDate(post.createdAt)}</p>
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                      {post.body.replace(/<[^>]+>/g, ' ').trim()}
-                    </p>
+                {(classifieds?.listings ?? []).slice(0, 3).map((listing) => (
+                  <li key={listing.id} className="border-b pb-4 last:border-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <Link
+                        href={`/t/${slug}/portal/classifieds`}
+                        className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                      >
+                        {listing.title}
+                      </Link>
+                      <Badge variant="outline" className="shrink-0 text-[10px]">
+                        {listing.category}
+                      </Badge>
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">{listing.description}</p>
+                    {listing.priceCents != null && (
+                      <p className="mt-1 text-sm font-semibold text-gray-800">
+                        {formatCurrency(listing.priceCents)}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      <Card className="mt-6">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle>Latest Classifieds</CardTitle>
-              <CardDescription>Community buy, sell, and trade listings</CardDescription>
-            </div>
-            <Link href={`/t/${slug}/portal/classifieds`} className="text-sm text-blue-600 hover:underline">
-              View all
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {(classifieds?.listings ?? []).length === 0 ? (
-            <div className="text-sm text-gray-500">
-              <p>No classified listings yet.</p>
-              <Link href={`/t/${slug}/portal/classifieds/new`} className="mt-2 inline-block text-blue-600 hover:underline">
-                Post a classified
+      {features.voting && (
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <CardTitle>Open Voting</CardTitle>
+                <CardDescription>Board resolutions and community polls needing your vote</CardDescription>
+              </div>
+              <Link href={`/t/${slug}/portal/voting`} className="text-sm text-blue-600 hover:underline">
+                View all
               </Link>
             </div>
-          ) : (
-            <ul className="space-y-4">
-              {(classifieds?.listings ?? []).slice(0, 3).map((listing) => (
-                <li key={listing.id} className="border-b pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <Link
-                      href={`/t/${slug}/portal/classifieds`}
-                      className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
-                    >
-                      {listing.title}
-                    </Link>
-                    <Badge variant="outline" className="shrink-0 text-[10px]">
-                      {listing.category}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-sm text-gray-600">{listing.description}</p>
-                  {listing.priceCents != null && (
-                    <p className="mt-1 text-sm font-semibold text-gray-800">
-                      {formatCurrency(listing.priceCents)}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="mt-6">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle>Open Voting</CardTitle>
-              <CardDescription>Board resolutions and community polls needing your vote</CardDescription>
-            </div>
-            <Link href={`/t/${slug}/portal/voting`} className="text-sm text-blue-600 hover:underline">
-              View all
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {(resolutions?.resolutions ?? []).filter((item) => item.status === 'OPEN').length === 0 ? (
-            <p className="text-sm text-gray-500">No open votes right now.</p>
-          ) : (
-            <ul className="space-y-4">
-              {(resolutions?.resolutions ?? [])
-                .filter((item) => item.status === 'OPEN')
-                .slice(0, 3)
-                .map((item) => (
-                  <li key={item.id} className="border-b pb-4 last:border-0 last:pb-0">
-                    <Link
-                      href={`/t/${slug}/portal/voting`}
-                      className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
-                    >
-                      {item.title}
-                    </Link>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {item.type === 'RESOLUTION' ? 'Board resolution' : 'Community viewpoint'} ·{' '}
-                      {item.voteCount} vote{item.voteCount === 1 ? '' : 's'}
-                    </p>
-                  </li>
-                ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            {(resolutions?.resolutions ?? []).filter((item) => item.status === 'OPEN').length === 0 ? (
+              <p className="text-sm text-gray-500">No open votes right now.</p>
+            ) : (
+              <ul className="space-y-4">
+                {(resolutions?.resolutions ?? [])
+                  .filter((item) => item.status === 'OPEN')
+                  .slice(0, 3)
+                  .map((item) => (
+                    <li key={item.id} className="border-b pb-4 last:border-0 last:pb-0">
+                      <Link
+                        href={`/t/${slug}/portal/voting`}
+                        className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                      >
+                        {item.title}
+                      </Link>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {item.type === 'RESOLUTION' ? 'Board resolution' : 'Community viewpoint'} ·{' '}
+                        {item.voteCount} vote{item.voteCount === 1 ? '' : 's'}
+                      </p>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {nextDue && (
         <div className="fixed inset-x-4 bottom-4 z-30 sm:hidden">
