@@ -18,6 +18,7 @@ export function TenantPublicShell({
   title,
   description,
   maxWidth = '4xl',
+  showHeaderNav = true,
   children,
 }: {
   slug: string;
@@ -25,6 +26,7 @@ export function TenantPublicShell({
   title?: string;
   description?: string;
   maxWidth?: keyof typeof maxWidthClasses;
+  showHeaderNav?: boolean;
   children: ReactNode;
 }) {
   const { data: tenant } = useQuery({
@@ -37,7 +39,7 @@ export function TenantPublicShell({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <TenantHeader slug={slug} name={name} />
+      <TenantHeader slug={slug} name={name} showNav={showHeaderNav} />
       <main className="flex-1 bg-gray-50">
         <div className={`mx-auto ${maxWidthClasses[maxWidth]} px-4 py-8 sm:py-12`}>
           {title && <h1 className="mb-2 text-2xl font-bold sm:text-3xl">{title}</h1>}

@@ -27,7 +27,7 @@ export default function NewsDetailPage() {
   const post = data?.post;
 
   return (
-    <TenantPublicShell slug={slug} maxWidth="4xl">
+    <TenantPublicShell slug={slug} maxWidth="4xl" showHeaderNav={false}>
       <Link href={`/t/${slug}/news`} className="text-sm text-blue-600 hover:underline">
         ← Back to news
       </Link>

@@ -30,6 +30,7 @@ export default function NewsListPage() {
       slug={slug}
       title="Community News"
       description="Updates and announcements from your homeowners association."
+      showHeaderNav={false}
     >
       <OfflineNotice visible={!isOnline && posts.length > 0} />
 
