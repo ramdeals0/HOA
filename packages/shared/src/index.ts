@@ -1,5 +1,6 @@
 export * from './roles';
 export * from './plans';
+export * from './portal-nav';
 export * from './schemas/auth';
 export * from './schemas/tenant';
 export * from './schemas/news';

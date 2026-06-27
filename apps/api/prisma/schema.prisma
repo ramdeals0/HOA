@@ -168,6 +168,7 @@ model TenantSettings {
   stripeWebhookSecret String?  @map("stripe_webhook_secret")
   lastStripeEventAt   DateTime? @map("last_stripe_event_at")
   lastEmailSentAt     DateTime? @map("last_email_sent_at")
+  portalNavConfig     Json?     @map("portal_nav_config")
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
